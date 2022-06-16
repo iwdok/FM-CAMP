@@ -1,3 +1,6 @@
+import { withIronSessionApiRoute } from 'iron-session/next'
+import { sessionOptions } from '/lib/session'
+
 import database from '/utils/database';
 
 const authHandler = async (req, res) => {
@@ -5,16 +8,19 @@ const authHandler = async (req, res) => {
 		body: { email, password },
 		method,
 	} = req;
-	console.log(req.query);
-	console.log(req.body);
-	console.log(email, password);
 	switch (method) {
 		case 'POST':
-			const user = await database.select('*').from('users').where({email: email}).limit(1);
-			if (user.length === 1){
-				res.status(200).json(user[0]);
+			const user = await database.select('*').from('users').where({ email: email }).limit(1);
+			if (user.length === 1) {
+				if (user[0].password === password) {
+					req.session.user = user[0];
+					await req.session.save();
+					res.status(200).json(user[0]);
+				} else {
+					res.status(403).json({ errorMessage: 'Неверный пароль' });
+				}
 			} else {
-				res.status(404).json({errorMessage: 'Пользователь не найден'});
+				res.status(404).json({ errorMessage: 'Пользователь не найден' });
 			}
 			console.log(user);
 			break;
@@ -24,4 +30,6 @@ const authHandler = async (req, res) => {
 	}
 }
 
-export default authHandler;
+export default withIronSessionApiRoute(authHandler, sessionOptions)
+
+// export default authHandler;

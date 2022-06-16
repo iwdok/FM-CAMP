@@ -6,7 +6,7 @@ import Logo from '/public/logo.png';
 
 import { Button, Grid } from '@mantine/core';
 
-export const Header = (user) => {
+export const Header = ({ user }) => {
 	return (
 		<Grid className={styles.header}>
 			<Grid.Col span={8} className={styles.menu} justify="center">
@@ -22,7 +22,7 @@ export const Header = (user) => {
 			</Grid.Col>
 			<Grid.Col span={4} align="right">
 				{
-					user.username ?
+					(user && user.email) ?
 						(
 							<Link href="/account" passHref>
 								<Button variant="light">Личный кабинет</Button>

@@ -5,11 +5,17 @@ import Image from 'next/image';
 import styles from './auth.module.scss';
 
 import Logo from '/public/logo.png';
+import useUser from '/lib/useUser.js';
 
 import { Card, Input, InputWrapper, Button, Center, Text } from '@mantine/core';
 import { At, Lock } from 'tabler-icons-react';
 
 const Auth = () => {
+	const { mutateUser } = useUser({
+		redirectTo: '/',
+		redirectIfFound: true,
+	})
+
 	const [emailError, setEmailError] = useState('');
 	const [passwordError, setPasswordError] = useState('');
 	const [error, setError] = useState('');
@@ -20,11 +26,11 @@ const Auth = () => {
 		setError('');
 		setEmailError('');
 		setPasswordError('');
-		if (e.target.email.value.length === 0){
+		if (e.target.email.value.length === 0) {
 			setEmailError('Введите электронную почту');
 			return;
 		}
-		if (e.target.password.value.length === 0){
+		if (e.target.password.value.length === 0) {
 			setPasswordError('Введите пароль');
 			return;
 		}
@@ -32,17 +38,19 @@ const Auth = () => {
 		axios.post('/auth', {
 			email: e.target.email.value,
 			password: e.target.password.value
-		}).then(data => {
-			console.log(data.status);
-			setAuthLoading(false);
+		}).then(res => {
+			if (res.status === 200){
+				mutateUser(res.data);
+			}
 		}).catch(error => {
 			console.log(error.response.status);
-			setAuthLoading(false);
 			if (error.response.status === 404) {
 				setError('Пользователь не найден');
 			} else if (error.response.status === 403) {
 				setError('Неверный пароль');
 			}
+		}).finally(() => {
+			setAuthLoading(false);
 		});
 	}
 

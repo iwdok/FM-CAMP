@@ -4,12 +4,10 @@ import { sessionOptions } from '/lib/session'
 import database from '/utils/database';
 
 const authHandler = async (req, res) => {
-	const {
-		body: { email, password },
-		method,
-	} = req;
+	const { method } = req;
 	switch (method) {
 		case 'POST':
+			const { body: { email, password } } = req;
 			const user = await database.select('*').from('users').where({ email: email }).limit(1);
 			if (user.length === 1) {
 				if (user[0].password === password) {

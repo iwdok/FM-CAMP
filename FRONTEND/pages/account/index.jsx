@@ -7,6 +7,7 @@ import styles from './account.module.scss';
 import useUser from '/lib/useUser.js';
 import { MyAccount } from '/components/MyAccount';
 import { CoursesControl } from '/components/CoursesControl';
+import { UsersControl } from '/components/UsersControl';
 
 import { Container, Tabs, Card, Input, InputWrapper, Button, Center, Text } from '@mantine/core';
 import { ListCheck, Users, ListDetails, User, Settings } from 'tabler-icons-react';
@@ -33,9 +34,11 @@ const Account = () => {
 								<MyAccount user={user} />
 							</Tabs.Tab>
 							<Tabs.Tab label="Управление пользователями" icon={<Users size={14} />}>
+								<UsersControl />
+							</Tabs.Tab>
+							<Tabs.Tab label="Управление курсами" icon={<ListDetails size={14} />}>
 								<CoursesControl />
 							</Tabs.Tab>
-							<Tabs.Tab label="Управление курсами" icon={<ListDetails size={14} />}>Settings tab content</Tabs.Tab>
 							<Tabs.Tab label="Настройки" icon={<Settings size={14} />}>Settings tab content</Tabs.Tab>
 						</Tabs>
 					</>

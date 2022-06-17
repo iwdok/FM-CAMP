@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import Router from 'next/router';
 import useSWR from 'swr';
 
-const fetcher = url => fetch(url).then(r => r.json());
+import fetcher from '/utils/fetcher';
 
 export default function useUser({
 	redirectTo = '',

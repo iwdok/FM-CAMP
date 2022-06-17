@@ -4,18 +4,21 @@ import database from '/utils/database';
 
 const userHandler = async (req, res) => {
 	if (req.session.user) {
-		// in a real world application you might read the user id from the session and then do a database request
-		// to get more information on the user if needed
-		res.json({
-			...req.session.user,
-			isLoggedIn: true,
-		})
+		const exists_user = await database.select('*').from('users').where({ email: req.session.user.email }).limit(1);
+		if (exists_user.length === 1) {
+			res.json({
+				...exists_user[0],
+				isLoggedIn: true,
+			});
+		} else {
+			res.json({
+				isLoggedIn: false,
+			});
+		}
 	} else {
 		res.json({
 			isLoggedIn: false,
-			login: '',
-			avatarUrl: '',
-		})
+		});
 	}
 }
 

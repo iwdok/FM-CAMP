@@ -7,7 +7,7 @@ import { Plus, TrashX, Edit } from 'tabler-icons-react';
 
 import { AddCourse } from './addCourse';
 
-export const CoursesControl = () => {
+export const CourseUsersControl = ({course_id}) => {
 	const [addCourseModalOpened, setAddCourseModalOpened] = useState(false);
 
 	const [coursesLoading, setCoursesLoading] = useState(true);
@@ -15,7 +15,7 @@ export const CoursesControl = () => {
 	const [coursesListError, setCoursesListError] = useState('');
 
 	useEffect(() => {
-		axios.get('/courses')
+		axios.get(`/courses/${course_id}/users`)
 			.then(res => {
 				setCoursesList(res.data);
 			})

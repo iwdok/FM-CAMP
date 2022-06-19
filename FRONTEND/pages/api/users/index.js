@@ -18,6 +18,11 @@ const usersHandler = async (req, res) => {
 			break;
 		case 'POST':
 			const { body: { email, name, surname, password, age, status } } = req;
+			const exists_user = await database.select('email').from('users').where({ email: email }).limit(1);
+			if (exists_user.length > 0) {
+				res.status(409).json({ errorMessage: 'User exists' });
+				break;
+			}
 			const new_user = await database('users')
 				.returning('id')
 				.insert({

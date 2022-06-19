@@ -6,8 +6,10 @@ import { Space, Loader, Title, Button, Center, Container, Table } from '@mantine
 import { Plus, TrashX, Edit } from 'tabler-icons-react';
 
 import { AddCourse } from './addCourse';
+import { DeleteCourse } from './deleteCourse';
+// import { EditCourse } from './editCourse';
 
-export const CourseUsersControl = ({course_id}) => {
+export const CourseUsersControl = ({ course_id }) => {
 	const [addCourseModalOpened, setAddCourseModalOpened] = useState(false);
 
 	const [coursesLoading, setCoursesLoading] = useState(true);
@@ -30,6 +32,8 @@ export const CourseUsersControl = ({course_id}) => {
 	const pushCourse = (course) => {
 		setCoursesList([course, ...coursesList]);
 	}
+
+	
 
 	return (
 		<Container style={{ width: '100%' }}>
@@ -81,6 +85,8 @@ export const CourseUsersControl = ({course_id}) => {
 				{coursesListError}
 			</Center>
 			<AddCourse opened={addCourseModalOpened} setOpened={setAddCourseModalOpened} pushCourse={pushCourse} />
+			<DeleteCourse opened={deleteCourseModalOpened} setOpened={setDeleteCourseModalOpened} removeCourse={removeCourse} />
+			{/* <EditCourse opened={editCourseModalOpened} setOpened={setEditCourseModalOpened} updateCourseList={updateCourse} /> */}
 		</Container>
 	)
 }

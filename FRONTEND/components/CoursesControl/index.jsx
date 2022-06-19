@@ -6,9 +6,16 @@ import { Space, Loader, Title, Button, Center, Container, Table } from '@mantine
 import { Plus, TrashX, Edit } from 'tabler-icons-react';
 
 import { AddCourse } from './addCourse';
+import { DeleteCourse } from './deleteCourse';
+import { EditCourse } from './editCourse';
 
 export const CoursesControl = () => {
 	const [addCourseModalOpened, setAddCourseModalOpened] = useState(false);
+	const [deleteCourseModalOpened, setDeleteCourseModalOpened] = useState(false);
+	const [editCourseModalOpened, setEditCourseModalOpened] = useState(false);
+
+	const [deleteCourseId, setDeleteCourseId] = useState(-1);
+	const [editCourseId, setEditCourseId] = useState(-1);
 
 	const [coursesLoading, setCoursesLoading] = useState(true);
 	const [coursesList, setCoursesList] = useState([]);
@@ -29,6 +36,22 @@ export const CoursesControl = () => {
 
 	const pushCourse = (course) => {
 		setCoursesList([course, ...coursesList]);
+	}
+
+	const removeCourse = (id) => {
+		const delete_index = coursesList.findIndex(course => course.id === id);
+		if (delete_index !== -1) {
+			coursesList.splice(delete_index, 1)
+			setCoursesList(coursesList);
+		}
+	}
+
+	const updateCourse = (updatedCourse) => {
+		const update_index = coursesList.findIndex(course => course.id === updatedCourse.id);
+		if (update_index !== -1) {
+			coursesList[update_index] = updatedCourse;
+			setCoursesList(coursesList);
+		}
 	}
 
 	return (
@@ -65,10 +88,20 @@ export const CoursesControl = () => {
 							<td>{0}</td>
 							<td>
 								<Center>
-									<Link href={`/courses/edit/${course.id}`} passHref>
-										<Edit style={{ cursor: 'pointer', color: '#007bff' }} />
-									</Link>
-									<TrashX style={{ cursor: 'pointer', color: '#dc3545' }} />
+									<Edit
+										style={{ cursor: 'pointer', color: '#007bff' }}
+										onClick={() => {
+											setEditCourseId(course.id);
+											setEditCourseModalOpened(true);
+										}}
+									/>
+									<TrashX
+										style={{ cursor: 'pointer', color: '#dc3545' }}
+										onClick={() => {
+											setDeleteCourseId(course.id);
+											setDeleteCourseModalOpened(true);
+										}}
+									/>
 								</Center>
 							</td>
 						</tr>
@@ -81,6 +114,8 @@ export const CoursesControl = () => {
 				{coursesListError}
 			</Center>
 			<AddCourse opened={addCourseModalOpened} setOpened={setAddCourseModalOpened} pushCourse={pushCourse} />
+			<DeleteCourse opened={deleteCourseModalOpened} setOpened={setDeleteCourseModalOpened} removeCourse={removeCourse} deleteCourseId={deleteCourseId} />
+			<EditCourse opened={editCourseModalOpened} setOpened={setEditCourseModalOpened} updateCourseList={updateCourse} editCourseId={editCourseId}/>
 		</Container>
 	)
 }

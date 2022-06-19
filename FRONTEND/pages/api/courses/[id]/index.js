@@ -3,26 +3,26 @@ import { sessionOptions } from '/lib/session';
 
 import database from '/utils/database';
 
-const userHandler = async (req, res) => {
+const courseHandler = async (req, res) => {
 	const { method } = req;
 	const { id } = req.query
-	const exists_user = await database.select('*').from('users').where({ id: id }).limit(1);
-	if (exists_user.length <= 0) {
-		res.status(410).json({ errorMessage: 'User not exists' });
+	const exists_course = await database.select('*').from('courses').where({ id: id }).limit(1);
+	if (exists_course.length <= 0) {
+		res.status(410).json({ errorMessage: 'Course not exists' });
 		return;
 	}
 	switch (method) {
 		case 'GET':
-			res.status(200).json(exists_user[0]);
+			res.status(200).json(exists_course[0]);
 			break;
 		case 'PUT':
 			if (!req.session || !req.session.user || req.session.user.status !== 'admin') {
 				res.status(403).json({ errorMessage: 'Forbidden' });
 				break;
 			}
-			const { body: { email, name, surname, password, age, status } } = req;
-			const check_new_email = await database.select('*').from('users').where({email: email}).limit(1);
-			if (check_new_email.length > 0){
+			const { body: { name, description, image } } = req;
+			const check_new_name = await database.select('*').from('users').where({name: name}).limit(1);
+			if (check_new_name.length > 0){
 				res.status(409).json({ errorMessage: 'Email exists'});
 				break;
 			}
@@ -46,15 +46,15 @@ const userHandler = async (req, res) => {
 				res.status(403).json({ errorMessage: 'Forbidden' });
 				break;
 			}
-			const deleted_user = await database('users').returning('id').del().where({ id: id });
+			const deleted_course = await database('courses').returning('id').del().where({ id: id });
 			res.status(200).json({
-				id: deleted_user[0].id
+				id: deleted_course[0].id
 			})
 			break;
 		default:
-			res.setHeader('Allow', ['GET', 'POST']);
+			res.setHeader('Allow', ['GET', 'PUT', 'DELETE']);
 			res.status(405).end(`Method ${method} Not Allowed`);
 	}
 }
 
-export default withIronSessionApiRoute(userHandler, sessionOptions)
+export default withIronSessionApiRoute(courseHandler, sessionOptions)

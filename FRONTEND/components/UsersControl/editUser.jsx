@@ -1,14 +1,14 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { Modal, InputWrapper, Input, Center, NativeSelect, Space, Button, LoadingOverlay, Text } from '@mantine/core';
 import { showNotification } from '@mantine/notifications';
-import { Check } from 'tabler-icons-react';
+import { Check, Error404 } from 'tabler-icons-react';
 import axios from '/utils/rest';
 
-export const AddUser = ({ opened, setOpened, pushUser }) => {
+export const EditUser = ({ opened, setOpened, updateUserList, editUserId }) => {
 	const [loading, setLoading] = useState(false);
 
-	const [addError, setAddError] = useState('');
+	const [editError, setEditError] = useState('');
 
 	const [emailError, setEmailError] = useState('');
 	const [nameError, setNameError] = useState('');
@@ -17,15 +17,63 @@ export const AddUser = ({ opened, setOpened, pushUser }) => {
 	const [passwordError, setPasswordError] = useState('');
 	const [password_rError, setPassword_rError] = useState('');
 
-	const saveUser = (e) => {
+	const [emailDefaultValue, setEmailDefaultValue] = useState('');
+	const [nameDefaultValue, setNameDefaultValue] = useState('');
+	const [surnameDefaultValue, setSurnameDefaultValue] = useState('');
+	const [ageDefaultValue, setAgeDefaultValue] = useState('');
+	const [passwordDefaultValue, setPasswordDefaultValue] = useState('');
+	const [statusDefaultValue, setStatusDefaultValue] = useState('Ученик');
+
+	useEffect(() => {
+		if (editUserId !== -1) {
+			setLoading(true);
+			axios.get(`/user/${editUserId}`)
+				.then(res => {
+					if (res.status === 200) {
+						console.log(res.data);
+						setEmailDefaultValue(res.data.email);
+						setNameDefaultValue(res.data.name);
+						setSurnameDefaultValue(res.data.surname);
+						setAgeDefaultValue(res.data.age);
+						setPasswordDefaultValue(res.data.password);
+						res.data.status === 'user' ? setStatusDefaultValue('Ученик') : setStatusDefaultValue('Администратор');
+						setLoading(false);
+					}
+				})
+				.catch(error => {
+					if (error.response.status === '404') {
+						showNotification({
+							title: 'Пользователь не найден',
+							autoClose: 3500,
+							color: 'red',
+							icon: <Error404 size={18} />,
+						});
+					} else {
+						showNotification({
+							title: 'Ошибка поулчения пользователя',
+							autoClose: 3500,
+							color: 'red',
+							icon: <Error404 size={18} />,
+						});
+					}
+					setOpened(false);
+				})
+				.finally(() => {
+
+				})
+		}
+		console.log('REQ')
+	}, [editUserId, setOpened])
+
+	const updateUser = (e) => {
 		e.preventDefault();
-		setAddError('');
 		setEmailError('');
 		setNameError('');
 		setSurnameError('');
 		setAgeError('');
 		setPasswordError('');
 		setPassword_rError('');
+		setEditError('');
 		if (e.target.email.value === '') {
 			setEmailError('Введите электронную почту');
 			return;
@@ -57,7 +105,7 @@ export const AddUser = ({ opened, setOpened, pushUser }) => {
 		}
 		setLoading(true);
 
-		axios.post('/users', {
+		axios.put(`/user/${editUserId}`, {
 			email: e.target.email.value,
 			name: e.target.name.value,
 			surname: e.target.surname.value,
@@ -67,24 +115,23 @@ export const AddUser = ({ opened, setOpened, pushUser }) => {
 		})
 			.then(res => {
 				if (res.status === 200) {
-					pushUser(res.data);
+					updateUserList(res.data.user);
 					showNotification({
-						title: 'Пользователь добавлен',
+						title: 'Пользователь изменен',
 						autoClose: 3500,
 						color: 'green',
 						icon: <Check size={18} />,
 					});
-					e.target.reset();
 				} else {
-					setAddError('Ошибка добавления пользователя, попробуйте позже');
+					setEditError('Ошибка редактирования пользователя, попробуйте позже');
 				}
 			})
 			.catch(error => {
 				console.log(error)
 				if (error.response.status === 409) {
-					setAddError('Пользователь уже существует');
+					setEditError('Такая электронная почта уже зарегистрирована');
 				} else {
-					setAddError('Ошибка добавления пользователя, попробуйте позже');
+					setEditError('Ошибка редактирования пользователя, попробуйте позже');
 				}
 			})
 			.finally(() => {
@@ -96,33 +143,35 @@ export const AddUser = ({ opened, setOpened, pushUser }) => {
 		<Modal
 			opened={opened}
 			onClose={() => setOpened(false)}
-			title="Добавить пользователя"
+			title="Редактировать пользователя"
 			size="lg"
 			transition="fade"
 			transitionDuration={300}
 			transitionTimingFunction="ease"
 		>
-			<form onSubmit={saveUser}>
+			<form onSubmit={updateUser}>
 				<LoadingOverlay visible={loading} />
 				<InputWrapper required label="Электронная почта" description="Электронная почта пользователя" error={emailError}>
-					<Input type="email" placeholder="example@example.com" name="email" />
+					<Input type="email" placeholder="example@example.com" name="email" value={emailDefaultValue} onChange={event => setEmailDefaultValue(event.currentTarget.value)}/>
 				</InputWrapper>
 				<InputWrapper required label="Имя" description="Имя пользователя" error={nameError}>
-					<Input placeholder="Иван" type="text" name="name" />
+					<Input placeholder="Иван" type="text" name="name" value={nameDefaultValue} onChange={event => setNameDefaultValue(event.currentTarget.value)}/>
 				</InputWrapper>
 				<InputWrapper required label="Фамилия" description="Фамилия пользователя" error={surnameError}>
-					<Input placeholder="Иванов" type="text" name="surname" />
+					<Input placeholder="Иванов" type="text" name="surname" value={surnameDefaultValue} onChange={event => setSurnameDefaultValue(event.currentTarget.value)}/>
 				</InputWrapper>
 				<InputWrapper required label="Возраст" description="Возраст пользователя, числом" error={ageError}>
-					<Input placeholder="20" type="number" name="age" />
+					<Input placeholder="20" type="number" name="age" value={ageDefaultValue} onChange={event => setAgeDefaultValue(event.currentTarget.value)}/>
 				</InputWrapper>
 				<InputWrapper required label="Пароль" error={passwordError}>
-					<Input placeholder="*****" type="text" name="password" />
+					<Input placeholder="*****" type="text" name="password" value={passwordDefaultValue} onChange={event => setPasswordDefaultValue(event.currentTarget.value)}/>
 				</InputWrapper>
 				<InputWrapper required label="Повторите пароль" error={password_rError}>
 					<Input placeholder="*****" type="text" name="password_r" />
 				</InputWrapper>
 				<NativeSelect
+					value={statusDefaultValue}
+					onChange={event => setStatusDefaultValue(event.currentTarget.value)}
 					data={['Ученик', 'Администратор']}
 					placeholder="Выберите вариант"
 					label="Выберите типа пользователя"
@@ -137,18 +186,18 @@ export const AddUser = ({ opened, setOpened, pushUser }) => {
 						type="submit"
 						style={{ marginRight: '20px' }}
 					>
-						Добавить
+						Сохранить
 					</Button>
 					<Button
 						variant="light"
 						color="dark"
-						onClick={() => {setOpened(false)}}
+						onClick={() => { setOpened(false) }}
 					>
 						Отменить
 					</Button>
 				</Center>
 				<Center>
-					<Text color="red">{addError}</Text>
+					<Text color="red">{editError}</Text>
 				</Center>
 			</form>
 		</Modal>

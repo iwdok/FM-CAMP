@@ -1,15 +1,15 @@
 import { useEffect, useState } from 'react';
 
-import { Modal, InputWrapper, Input, Textarea, Group, Text, Space, Button, useMantineTheme, Center, LoadingOverlay, MultiSelect } from '@mantine/core';
+import { Modal, InputWrapper, Input, Textarea, Group, Text, Space, Button, useMantineTheme, Center, LoadingOverlay } from '@mantine/core';
 import { showNotification } from '@mantine/notifications';
 import { Dropzone, IMAGE_MIME_TYPE } from '@mantine/dropzone';
-import { Upload, X, Photo, Check } from 'tabler-icons-react';
+import { Upload, X, Photo, Check, Error404 } from 'tabler-icons-react';
 import axios from '/utils/rest';
 
-export const AddCourse = ({ opened, setOpened, pushCourse }) => {
+export const EditCourse = ({ opened, setOpened, updateCoursesList, editCourseId }) => {
 	const [loading, setLoading] = useState(false);
 
-	const [addError, setAddError] = useState('');
+	const [editError, setEditError] = useState('');
 
 	const [nameError, setNameError] = useState('');
 
@@ -21,21 +21,10 @@ export const AddCourse = ({ opened, setOpened, pushCourse }) => {
 
 	const theme = useMantineTheme();
 
-	const getIconColor = (status, theme) => {
-		return status.accepted
-			? theme.colors[theme.primaryColor][theme.colorScheme === 'dark' ? 4 : 6]
-			: status.rejected
-				? theme.colors.red[theme.colorScheme === 'dark' ? 4 : 6]
-				: theme.colorScheme === 'dark'
-					? theme.colors.dark[0]
-					: theme.colors.gray[7];
-	}
-
 	useEffect(() => {
 		if (opened) {
 			axios.get('/users')
 				.then(res => {
-					console.log(res)
 					setUsers(res.data);
 				})
 				.catch(error => {
@@ -46,6 +35,58 @@ export const AddCourse = ({ opened, setOpened, pushCourse }) => {
 				})
 		}
 	}, [opened]);
+
+
+	useEffect(() => {
+		if (editCourseId !== -1) {
+			setLoading(true);
+			axios.get(`/user/${editCourseId}`)
+				.then(res => {
+					if (res.status === 200) {
+						console.log(res.data);
+						setEmailDefaultValue(res.data.email);
+						setNameDefaultValue(res.data.name);
+						setSurnameDefaultValue(res.data.surname);
+						setAgeDefaultValue(res.data.age);
+						setPasswordDefaultValue(res.data.password);
+						res.data.status === 'user' ? setStatusDefaultValue('Ученик') : setStatusDefaultValue('Администратор');
+						setLoading(false);
+					}
+				})
+				.catch(error => {
+					if (error.response.status === '404') {
+						showNotification({
+							title: 'Пользователь не найден',
+							autoClose: 3500,
+							color: 'red',
+							icon: <Error404 size={18} />,
+						});
+					} else {
+						showNotification({
+							title: 'Ошибка поулчения пользователя',
+							autoClose: 3500,
+							color: 'red',
+							icon: <Error404 size={18} />,
+						});
+					}
+					setOpened(false);
+				})
+				.finally(() => {
+
+				})
+		}
+		console.log('REQ')
+	}, [editCourseId, setOpened])
+
+	const getIconColor = (status, theme) => {
+		return status.accepted
+			? theme.colors[theme.primaryColor][theme.colorScheme === 'dark' ? 4 : 6]
+			: status.rejected
+				? theme.colors.red[theme.colorScheme === 'dark' ? 4 : 6]
+				: theme.colorScheme === 'dark'
+					? theme.colors.dark[0]
+					: theme.colors.gray[7];
+	}
 
 	const ImageUploadIcon = ({
 		status,
@@ -80,14 +121,14 @@ export const AddCourse = ({ opened, setOpened, pushCourse }) => {
 	const saveCourse = (e) => {
 		e.preventDefault();
 		setNameError('');
-		setAddError('');
+		setEditError('');
 		if (e.target.name.value === '') {
 			setNameError('Введите название курса');
 			return;
 		}
 
 		if (image === '') {
-			setAddError('Выберите изображение');
+			setEditError('Выберите изображение');
 			return;
 		}
 
@@ -102,21 +143,21 @@ export const AddCourse = ({ opened, setOpened, pushCourse }) => {
 				if (res.status === 200) {
 					pushCourse(res.data);
 					showNotification({
-						title: 'Курс добавлен',
+						title: 'Курс изменен',
 						autoClose: 3500,
 						color: 'green',
 						icon: <Check size={18} />,
 					});
 				} else {
-					setAddError('Ошибка добавления курса, попробуйте позже');
+					setAddError('Ошибка изменения курса, попробуйте позже');
 				}
 			})
 			.catch(error => {
 				console.log(error)
 				if (error.response.status === 409) {
-					setAddError('Курс уже существует');
+					setAddError('Такое название курса уже занято');
 				} else {
-					setAddError('Ошибка добавления курса, попробуйте позже');
+					setAddError('Ошибка изменения курса, попробуйте позже');
 				}
 			})
 			.finally(() => {
@@ -128,7 +169,7 @@ export const AddCourse = ({ opened, setOpened, pushCourse }) => {
 		<Modal
 			opened={opened}
 			onClose={() => setOpened(false)}
-			title="Добавить курс"
+			title="Редактировать курс"
 			size="lg"
 			transition="fade"
 			transitionDuration={300}
@@ -142,15 +183,6 @@ export const AddCourse = ({ opened, setOpened, pushCourse }) => {
 				<InputWrapper label="Описание курса" description="Описание курса в свободной форме, необязательно" error={nameError}>
 					<Textarea type="text" name="description" />
 				</InputWrapper>
-				<MultiSelect
-					value={selectedUsers}
-					onChange={selected => setSelectedUsers(selected)}
-					data={users.map(el => el.email)}
-					label="Выбарите пользователей, которые должны попасть на курс"
-					placeholder="Пользователей не выбрано"
-					searchable
-					nothingFound="Пользователей не найдено"
-				/>
 				<Space h="md" />
 				<Dropzone
 					onDrop={(files) => {
@@ -189,7 +221,7 @@ export const AddCourse = ({ opened, setOpened, pushCourse }) => {
 					</Button>
 				</Center>
 				<Center>
-					<Text color="red">{addError}</Text>
+					<Text color="red">{editError}</Text>
 				</Center>
 			</form>
 		</Modal>

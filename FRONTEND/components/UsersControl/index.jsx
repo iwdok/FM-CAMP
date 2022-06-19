@@ -5,16 +5,39 @@ import { Space, Loader, Title, Button, Center, Container, Table } from '@mantine
 import { Plus, TrashX, Edit } from 'tabler-icons-react';
 
 import { AddUser } from './addUser';
+import { DeleteUser } from './deleteUser';
+import { EditUser } from './editUser';
 
 export const UsersControl = () => {
 	const [addUserModalOpened, setAddUserModalOpened] = useState(false);
+	const [deleteUserModalOpened, setDeleteUserModalOpened] = useState(false);
+	const [editUserModalOpened, setEditUserModalOpened] = useState(false);
 
 	const [usersLoading, setUsersLoading] = useState(true);
 	const [usersList, setUsersList] = useState([]);
 	const [usersListError, setUsersListError] = useState('');
 
+	const [deleteUserId, setDeleteUserId] = useState(-1);
+	const [editUserId, setEditUserId] = useState(-1);
+
 	const pushUser = (user) => {
 		setUsersList([user, ...usersList]);
+	}
+
+	const removeUser = (id) => {
+		const delete_index = usersList.findIndex(user => user.id === id);
+		if (delete_index !== -1) {
+			usersList.splice(delete_index, 1)
+			setUsersList(usersList);
+		}
+	}
+
+	const updateUser = (updatedUser) => {
+		const update_index = usersList.findIndex(user => user.id === updatedUser.id);
+		if (update_index !== -1) {
+			usersList[update_index] = updatedUser;
+			setUsersList(usersList);
+		}
 	}
 
 	useEffect(() => {
@@ -71,8 +94,20 @@ export const UsersControl = () => {
 							<td>{user.status === 'user' ? 'Ученик' : 'Администратор'}</td>
 							<td>
 								<Center>
-									<Edit style={{ cursor: 'pointer', color: '#007bff' }} />
-									<TrashX style={{ cursor: 'pointer', color: '#dc3545' }} />
+									<Edit
+										onClick={() => {
+											setEditUserId(user.id);
+											setEditUserModalOpened(true);
+										}}
+										style={{ cursor: 'pointer', color: '#007bff' }}
+									/>
+									<TrashX
+										onClick={() => {
+											setDeleteUserId(user.id);
+											setDeleteUserModalOpened(true);
+										}}
+										style={{ cursor: 'pointer', color: '#dc3545' }}
+									/>
 								</Center>
 							</td>
 						</tr>
@@ -85,6 +120,8 @@ export const UsersControl = () => {
 				{usersListError}
 			</Center>
 			<AddUser opened={addUserModalOpened} setOpened={setAddUserModalOpened} pushUser={pushUser} />
+			<DeleteUser opened={deleteUserModalOpened} setOpened={setDeleteUserModalOpened} removeUser={removeUser} deleteUserId={deleteUserId} />
+			<EditUser opened={editUserModalOpened} setOpened={setEditUserModalOpened} updateUserList={updateUser} editUserId={editUserId} />
 		</Container>
 	)
 }

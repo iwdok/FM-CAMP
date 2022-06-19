@@ -25,6 +25,15 @@ const coursesHandler = async (req, res) => {
 		case 'POST':
 			const form = new formidable.IncomingForm();
 			form.parse(req, async (err, fields, files) => {
+				if (err) {
+					res.status(500).json({ errorMessage: 'Error' });
+					return;
+				}
+				const exists_course = await database.select('*').from('courses').where({ name: fields.name }).limit(1);
+				if (exists_course.length > 0) {
+					res.status(409).json({ errorMessage: 'Course exists' });
+					return;
+				}
 				const path = saveFile(files.image);
 				const new_id = await database('courses').returning('id').insert({ name: fields.name, description: fields.description, image: path });
 				res.status(200).json({

@@ -6,7 +6,7 @@ import Link from 'next/link'
 
 import axios from '/utils/rest';
 
-import { SimpleGrid, Text, Container, Space, Card, Group, Badge, Button, useMantineTheme, Loader } from '@mantine/core';
+import { SimpleGrid, Text, Container, Space, Card, Group, Center, Button, useMantineTheme, Loader } from '@mantine/core';
 
 export default function Tasks() {
 	const router = useRouter()
@@ -99,6 +99,16 @@ export default function Tasks() {
 					<Text size="sm" weight={500} style={{ color: secondaryColor, lineHeight: 1.5 }}
 						dangerouslySetInnerHTML={{ __html: day.description }}>
 					</Text>
+					<Center>
+						<iframe
+							width={700}
+							height={400}
+							src={day.video}
+							frameBorder="0"
+							allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+							allowFullScreen>
+						</iframe>
+					</Center>
 
 					<Space h="lg" />
 					{tasksLoading && <Loader color="orange" variant="bars" />}
@@ -116,7 +126,7 @@ export default function Tasks() {
 							</Group>
 							<Link passHref href={`/courses/${course.id}/days/${day_id}/tasks/${task.id}`}>
 								<Button color="green" fullWidth style={{ marginTop: 14 }}>
-									Открыть день
+									Открыть задание
 								</Button>
 							</Link>
 						</Card>

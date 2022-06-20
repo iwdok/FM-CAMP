@@ -286,7 +286,7 @@ export default function Task() {
 							}
 						</>
 						:
-						<Button loading={acceptLoading} color="green" onClick={() => setAccepted(true)}>Приступить к выполнения</Button>}
+						<Button loading={acceptLoading} color="green" onClick={() => setAccepted(true)}>Приступить к выполнению</Button>}
 
 				</Card>
 			</Container >

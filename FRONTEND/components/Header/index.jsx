@@ -14,11 +14,11 @@ export const Header = ({ user }) => {
 					<Image src={Logo} alt="Инкубатор талантов" width={150} height={45} />
 				</Link>
 				<Link href="/">
-					Главная
-				</Link>
-				<Link href="/courses">
 					Курсы
 				</Link>
+				{/* <Link href="/courses">
+					Курсы
+				</Link> */}
 			</Grid.Col>
 			<Grid.Col span={4} align="right">
 				{

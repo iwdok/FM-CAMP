@@ -1,21 +1,23 @@
 import { useState, useEffect } from 'react';
-import Link from 'next/link';
 import axios from '/utils/rest';
 
 import { Space, Loader, Title, Button, Center, Container, Table } from '@mantine/core';
-import { Plus, TrashX, Edit } from 'tabler-icons-react';
+import { Plus, TrashX, Edit, ListNumbers } from 'tabler-icons-react';
 
 import { AddCourse } from './addCourse';
 import { DeleteCourse } from './deleteCourse';
 import { EditCourse } from './editCourse';
+import { Days } from './Days';
 
 export const CoursesControl = () => {
 	const [addCourseModalOpened, setAddCourseModalOpened] = useState(false);
 	const [deleteCourseModalOpened, setDeleteCourseModalOpened] = useState(false);
 	const [editCourseModalOpened, setEditCourseModalOpened] = useState(false);
+	const [daysModalOpened, setDaysModalOpened] = useState(false);
 
 	const [deleteCourseId, setDeleteCourseId] = useState(-1);
 	const [editCourseId, setEditCourseId] = useState(-1);
+	const [courseId, setCourseId] = useState(-1);
 
 	const [coursesLoading, setCoursesLoading] = useState(true);
 	const [coursesList, setCoursesList] = useState([]);
@@ -76,7 +78,8 @@ export const CoursesControl = () => {
 				<thead>
 					<tr>
 						<th>Название</th>
-						<th>Описание</th>
+						{/* <th>Описание</th> */}
+						<th>Количество дней</th>
 						<th>Количество участников</th>
 					</tr>
 				</thead>
@@ -84,10 +87,18 @@ export const CoursesControl = () => {
 					{!coursesLoading && coursesList.map(course => {
 						return <tr key={course.id}>
 							<td>{course.name}</td>
-							<td>{course.description}</td>
-							<td>{0}</td>
+							{/* <td>{course.description || 'Нет описания' }</td> */}
+							<td>{course.days}</td>
+							<td>{course.selected_users}</td>
 							<td>
 								<Center>
+									<ListNumbers
+										style={{ cursor: 'pointer', color: '#28a745' }}
+										onClick={() => {
+											setCourseId(course.id);
+											setDaysModalOpened(true);
+										}}
+									/>
 									<Edit
 										style={{ cursor: 'pointer', color: '#007bff' }}
 										onClick={() => {
@@ -115,7 +126,8 @@ export const CoursesControl = () => {
 			</Center>
 			<AddCourse opened={addCourseModalOpened} setOpened={setAddCourseModalOpened} pushCourse={pushCourse} />
 			<DeleteCourse opened={deleteCourseModalOpened} setOpened={setDeleteCourseModalOpened} removeCourse={removeCourse} deleteCourseId={deleteCourseId} />
-			<EditCourse opened={editCourseModalOpened} setOpened={setEditCourseModalOpened} updateCourseList={updateCourse} editCourseId={editCourseId}/>
+			<EditCourse opened={editCourseModalOpened} setOpened={setEditCourseModalOpened} updateCourseList={updateCourse} editCourseId={editCourseId} />
+			<Days opened={daysModalOpened} setOpened={setDaysModalOpened} updateCourseList={updateCourse} courseId={courseId} />
 		</Container>
 	)
 }

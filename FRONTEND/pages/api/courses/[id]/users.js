@@ -3,31 +3,24 @@ import { sessionOptions } from '/lib/session';
 
 import database from '/utils/database';
 
-export const config = {
-	api: {
-		bodyParser: false,
-	},
-};
-
-const coursesUsersHandler = async (req, res) => {
-	if (!req.session || !req.session.user || req.session.user.status !== 'admin') {
-		res.status(403).json({ errorMessage: 'Forbidden' });
+const courseUsersHandler = async (req, res) => {
+	const { method } = req;
+	const { id } = req.query
+	const exists_course = await database.select('*').from('courses').where({ id: id }).limit(1);
+	if (exists_course.length <= 0) {
+		res.status(410).json({ errorMessage: 'Course not exists' });
 		return;
 	}
-	const { method } = req;
 	switch (method) {
 		case 'GET':
-			console.log(req);
-			const users = await database.select('*').from('connected_courses').where({course_id: course_id});
-			res.status(200).json(courses);
-			break;
-		case 'POST':
-			
+			const connected_courses = await database.select('user_id').from('connected_courses').where({ course_id: exists_course[0].id });
+			const connected_users = await database.select('email').from('users').whereIn('id', connected_courses.map(el => el.user_id));
+			res.status(200).json(connected_users.map(el => el.email));
 			break;
 		default:
-			res.setHeader('Allow', ['GET', 'POST']);
+			res.setHeader('Allow', ['GET']);
 			res.status(405).end(`Method ${method} Not Allowed`);
 	}
 }
 
-export default withIronSessionApiRoute(coursesUsersHandler, sessionOptions)
+export default withIronSessionApiRoute(courseUsersHandler, sessionOptions)

@@ -62,7 +62,6 @@ export const EditUser = ({ opened, setOpened, updateUserList, editUserId }) => {
 
 				})
 		}
-		console.log('REQ')
 	}, [editUserId, setOpened])
 
 	const updateUser = (e) => {

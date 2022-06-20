@@ -21,9 +21,9 @@ const courseHandler = async (req, res) => {
 				break;
 			}
 			const { body: { name, description, image } } = req;
-			const check_new_name = await database.select('*').from('users').where({name: name}).limit(1);
+			const check_new_name = await database.select('*').from('courses').where({name: name}).limit(1);
 			if (check_new_name.length > 0){
-				res.status(409).json({ errorMessage: 'Email exists'});
+				res.status(409).json({ errorMessage: 'Course exists'});
 				break;
 			}
 			const updated_user = await database('users')

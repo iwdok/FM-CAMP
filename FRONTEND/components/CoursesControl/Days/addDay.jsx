@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
 import { Modal, InputWrapper, Input, Group, Text, Space, Button, useMantineTheme, Center, LoadingOverlay, MultiSelect } from '@mantine/core';
 import RichTextEditor from '/components/RichText';
@@ -8,19 +8,17 @@ import { Dropzone, IMAGE_MIME_TYPE } from '@mantine/dropzone';
 import { Upload, X, Photo, Check } from 'tabler-icons-react';
 import axios from '/utils/rest';
 
-export const AddCourse = ({ opened, setOpened, pushCourse }) => {
+export const AddDay = ({ opened, setOpened, pushDay, courseId }) => {
 	const [loading, setLoading] = useState(false);
 
 	const [addError, setAddError] = useState('');
 
 	const [nameError, setNameError] = useState('');
+	const [videoError, setVideoError] = useState('');
 
 	const [description, setDescription] = useState('');
 	const [image, setImage] = useState('');
 	const [createObjectURL, setCreateObjectURL] = useState(null);
-
-	const [users, setUsers] = useState([]);
-	const [selectedUsers, setSelectedUsers] = useState([]);
 
 	const theme = useMantineTheme();
 
@@ -33,22 +31,6 @@ export const AddCourse = ({ opened, setOpened, pushCourse }) => {
 					? theme.colors.dark[0]
 					: theme.colors.gray[7];
 	}
-
-	useEffect(() => {
-		if (opened) {
-			axios.get('/users')
-				.then(res => {
-					console.log(res)
-					setUsers(res.data);
-				})
-				.catch(error => {
-					console.log(error);
-				})
-				.finally(() => {
-
-				})
-		}
-	}, [opened]);
 
 	const ImageUploadIcon = ({
 		status,
@@ -80,48 +62,46 @@ export const AddCourse = ({ opened, setOpened, pushCourse }) => {
 		</Group>
 	);
 
-	const saveCourse = (e) => {
+	const saveDay = (e) => {
 		e.preventDefault();
 		setNameError('');
 		setAddError('');
 		if (e.target.name.value === '') {
-			setNameError('Введите название курса');
+			setNameError('Введите название дня');
 			return;
 		}
 
-		if (image === '') {
-			setAddError('Выберите изображение');
-			return;
-		}
 
 		setLoading(true);
 
 		const body = new FormData();
 		body.append("name", e.target.name.value);
 		body.append("description", description);
-		body.append("selectedUsers", JSON.stringify(selectedUsers));
-		body.append("image", image, `course_${nanoid()}`);
-		axios.post('/courses', body)
+		body.append("video", e.target.video.value);
+		if (image){
+			body.append("image", image, `day_${nanoid()}`);
+		}
+		axios.post(`/courses/${courseId}/days`, body)
 			.then(res => {
 				if (res.status === 200) {
-					pushCourse(res.data);
+					pushDay(res.data);
 					showNotification({
-						title: 'Курс добавлен',
+						title: 'День добавлен',
 						autoClose: 3500,
 						color: 'green',
 						icon: <Check size={18} />,
 					});
 					e.target.reset();
 				} else {
-					setAddError('Ошибка добавления курса, попробуйте позже');
+					setAddError('Ошибка добавления дня, попробуйте позже');
 				}
 			})
 			.catch(error => {
 				console.log(error)
 				if (error.response.status === 409) {
-					setAddError('Курс уже существует');
+					setAddError('День уже существует');
 				} else {
-					setAddError('Ошибка добавления курса, попробуйте позже');
+					setAddError('Ошибка добавления дня, попробуйте позже');
 				}
 			})
 			.finally(() => {
@@ -133,18 +113,22 @@ export const AddCourse = ({ opened, setOpened, pushCourse }) => {
 		<Modal
 			opened={opened}
 			onClose={() => setOpened(false)}
-			title="Добавить курс"
+			title="Добавить День"
 			size="lg"
 			transition="fade"
 			transitionDuration={300}
 			transitionTimingFunction="ease"
 		>
-			<form onSubmit={saveCourse}>
+			<form onSubmit={saveDay}>
 				<LoadingOverlay visible={loading} />
-				<InputWrapper required label="Название курса" description="Название курса в свободной форме, будет отображаться в качесвте заголовка" error={nameError}>
+				<InputWrapper required label="Название дня" description="Название дня в свободной форме, будет отображаться в качесвте заголовка" error={nameError}>
 					<Input type="text" name="name" />
 				</InputWrapper>
+				<InputWrapper label="Видео" description="Ссылка на видео с YouTube" error={videoError}>
+					<Input type="text" name="video" />
+				</InputWrapper>
 				<Space h="md" />
+				<Text>Описание</Text>
 				<RichTextEditor
 					name="description"
 					value={description}
@@ -161,16 +145,7 @@ export const AddCourse = ({ opened, setOpened, pushCourse }) => {
 					style={{ height: '400px', overflow: 'auto' }}
 				/>
 				<Space h="md" />
-				<MultiSelect
-					value={selectedUsers}
-					onChange={selected => setSelectedUsers(selected)}
-					data={users.map(el => el.email)}
-					label="Выберите пользователей, которые должны попасть на курс"
-					placeholder="Пользователей не выбрано"
-					searchable
-					nothingFound="Пользователей не найдено"
-				/>
-				<Space h="md" />
+				<Text>Изображение</Text>
 				<Dropzone
 					onDrop={(files) => {
 						setImage(files[0]);

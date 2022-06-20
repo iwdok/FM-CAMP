@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 
-import { Modal, InputWrapper, Input, Textarea, Group, Text, Space, Button, useMantineTheme, Center, LoadingOverlay } from '@mantine/core';
+import { Modal, InputWrapper, Input, Group, Text, Space, Button, useMantineTheme, Center, LoadingOverlay, MultiSelect } from '@mantine/core';
+import RichTextEditor from '/components/RichText';
+import { nanoid } from 'nanoid';
 import { showNotification } from '@mantine/notifications';
 import { Dropzone, IMAGE_MIME_TYPE } from '@mantine/dropzone';
 import { Upload, X, Photo, Check, Error404 } from 'tabler-icons-react';
@@ -10,9 +12,11 @@ export const EditCourse = ({ opened, setOpened, updateCoursesList, editCourseId 
 	const [loading, setLoading] = useState(false);
 
 	const [editError, setEditError] = useState('');
-
 	const [nameError, setNameError] = useState('');
 
+	const [nameDefaultValue, setNameDefaultValue] = useState('');
+	
+	const [description, setDescription] = useState('');
 	const [image, setImage] = useState('');
 	const [createObjectURL, setCreateObjectURL] = useState(null);
 
@@ -39,31 +43,49 @@ export const EditCourse = ({ opened, setOpened, updateCoursesList, editCourseId 
 
 	useEffect(() => {
 		if (editCourseId !== -1) {
+			setSelectedUsers([]);
 			setLoading(true);
-			axios.get(`/user/${editCourseId}`)
+			axios.get(`/courses/${editCourseId}`)
 				.then(res => {
+					console.log(res.data)
 					if (res.status === 200) {
 						console.log(res.data);
-						setEmailDefaultValue(res.data.email);
 						setNameDefaultValue(res.data.name);
-						setSurnameDefaultValue(res.data.surname);
-						setAgeDefaultValue(res.data.age);
-						setPasswordDefaultValue(res.data.password);
-						res.data.status === 'user' ? setStatusDefaultValue('Ученик') : setStatusDefaultValue('Администратор');
-						setLoading(false);
+						setDescription(res.data.description);
+						setImage(res.data.image);
+						axios.get(`/courses/${editCourseId}/users`)
+							.then(res => {
+								if (res.status === 200) {
+									setSelectedUsers(res.data);
+								} else {
+									setAddError('Ошибка редактирования курса, попробуйте позже');
+								}
+							})
+							.catch(error => {
+								console.log(error);
+								if (error.response.status === 410) {
+									setEditError('Курс не найден, попробуйте позже');
+								}
+							})
+							.finally(() => {
+								setLoading(false);
+							})
+					} else {
+						setAddError('Ошибка редактирования курса, попробуйте позже');
 					}
 				})
 				.catch(error => {
+					console.log(error)
 					if (error.response.status === '404') {
 						showNotification({
-							title: 'Пользователь не найден',
+							title: 'Курс не найден',
 							autoClose: 3500,
 							color: 'red',
 							icon: <Error404 size={18} />,
 						});
 					} else {
 						showNotification({
-							title: 'Ошибка поулчения пользователя',
+							title: 'Ошибка получения курса',
 							autoClose: 3500,
 							color: 'red',
 							icon: <Error404 size={18} />,
@@ -72,11 +94,10 @@ export const EditCourse = ({ opened, setOpened, updateCoursesList, editCourseId 
 					setOpened(false);
 				})
 				.finally(() => {
-
+					setLoading(false);
 				})
 		}
-		console.log('REQ')
-	}, [editCourseId, setOpened])
+	}, [editCourseId, setOpened, setSelectedUsers])
 
 	const getIconColor = (status, theme) => {
 		return status.accepted
@@ -105,7 +126,7 @@ export const EditCourse = ({ opened, setOpened, updateCoursesList, editCourseId 
 
 	const dropzoneChildren = (status, theme) => (
 		<Group position="center" spacing="xl" style={{ minHeight: 220, pointerEvents: 'none' }}>
-			{createObjectURL ? <img src={createObjectURL} width={100} /> :
+			{image ? <img src={image} width={100} /> :
 				<ImageUploadIcon status={status} style={{ color: getIconColor(status, theme) }} size={80} />}
 			<div>
 				<Text size="xl" inline>
@@ -138,7 +159,7 @@ export const EditCourse = ({ opened, setOpened, updateCoursesList, editCourseId 
 		body.append("name", e.target.name.value);
 		body.append("description", e.target.description.value);
 		body.append("image", image, `course_${e.target.name.value}.${image.path.split('.')[image.path.split('.').length - 1]}`);
-		axios.post('/courses', body)
+		axios.put(`/courses/${editCourseId}`, body)
 			.then(res => {
 				if (res.status === 200) {
 					pushCourse(res.data);
@@ -178,11 +199,34 @@ export const EditCourse = ({ opened, setOpened, updateCoursesList, editCourseId 
 			<form onSubmit={saveCourse}>
 				<LoadingOverlay visible={loading} />
 				<InputWrapper required label="Название курса" description="Название курса в свободной форме, будет отображаться в качесвте заголовка" error={nameError}>
-					<Input type="text" name="name" />
+					<Input type="text" name="name" value={nameDefaultValue} onChange={e => setNameDefaultValue(e.currentTarget.value)} />
 				</InputWrapper>
-				<InputWrapper label="Описание курса" description="Описание курса в свободной форме, необязательно" error={nameError}>
-					<Textarea type="text" name="description" />
-				</InputWrapper>
+				<Space h="md" />
+				<RichTextEditor
+					name="description"
+					value={description}
+					onChange={value => { setDescription(value) }}
+					controls={
+						[
+							['bold', 'italic', 'underline', 'link'],
+							['unorderedList', 'orderedList'],
+							['h1', 'h2', 'h3'],
+							['sup', 'sub'],
+							['alignLeft', 'alignCenter', 'alignRight'],
+						]
+					}
+					style={{ height: '400px', overflow: 'auto' }}
+				/>
+				<Space h="md" />
+				<MultiSelect
+					value={selectedUsers}
+					onChange={selected => setSelectedUsers(selected)}
+					data={users.map(el => el.email)}
+					label="Выберите пользователей, которые должны попасть на курс"
+					placeholder="Пользователей не выбрано"
+					searchable
+					nothingFound="Пользователей не найдено"
+				/>
 				<Space h="md" />
 				<Dropzone
 					onDrop={(files) => {
@@ -210,7 +254,7 @@ export const EditCourse = ({ opened, setOpened, updateCoursesList, editCourseId 
 						type="submit"
 						style={{ marginRight: '20px' }}
 					>
-						Добавить
+						Сохранить
 					</Button>
 					<Button
 						variant="light"

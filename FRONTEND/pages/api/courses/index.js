@@ -20,7 +20,20 @@ const coursesHandler = async (req, res) => {
 	switch (method) {
 		case 'GET':
 			const courses = await database.select('*').from('courses');
-			res.status(200).json(courses);
+			const connectedAlreadyUsers = await database.select(['id', 'course_id']).from('connected_courses').whereIn('course_id', courses.map(el => el.id));
+			const days = await database.select('id').from('days').whereIn('course_id', courses.map(el => el.id));
+			res.status(200).json(courses.map(course => {
+				return {
+					id: course.id,
+					name: course.name,
+					description: course.desciption,
+					image: course.image,
+					start_date: course.start_date,
+					end_date: course.end_date,
+					days: days.filter(el => el.course_id === course.id).length,
+					selected_users: connectedAlreadyUsers.filter(el => el.course_id === course.id).length
+				}
+			}));
 			break;
 		case 'POST':
 			const form = new formidable.IncomingForm();
@@ -36,12 +49,21 @@ const coursesHandler = async (req, res) => {
 				}
 				const path = saveFile(files.image);
 				const new_id = await database('courses').returning('id').insert({ name: fields.name, description: fields.description, image: path });
+				const selectedUsers = JSON.parse(fields.selectedUsers);
+				const selectedUsersIds = await database.select('id').from('users').whereIn('email', selectedUsers);
+				const connectedUsers = await database('connected_courses').returning('id').insert(selectedUsersIds.map(el => {
+					return {
+						course_id: new_id[0].id,
+						user_id: parseInt(el.id)
+					}
+				}));
 				res.status(200).json({
-					id: new_id,
+					id: new_id[0].id,
 					name: fields.name,
 					description: fields.description,
-					image: path
-				})
+					image: path,
+					selected_users: connectedUsers.length
+				});
 			});
 			break;
 		default:

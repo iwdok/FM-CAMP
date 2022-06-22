@@ -1,42 +1,18 @@
-import { useEffect, useState } from 'react';
 import Head from 'next/head'
 import Image from 'next/image'
 import Link from 'next/link'
 import styles from '../styles/Home.module.scss'
 
+import { sessionOptions } from '/lib/session';
+import { withIronSessionSsr } from "iron-session/next";
+
 import axios from '/utils/rest';
 
-import { SimpleGrid, Text, Container, Space, Card, Group, Badge, Button, useMantineTheme, Loader } from '@mantine/core';
+import { SimpleGrid, Text, Container, Space, Card, Group, Button, useMantineTheme, Loader, Progress } from '@mantine/core';
 
-export default function Home() {
-	const [coursesLoading, setCoursesLoading] = useState(false);
-	const [coursesError, setCoursesError] = useState(false);
-	const [courses, setCourses] = useState([]);
+export default function Home({ courses }) {
 
 	const theme = useMantineTheme();
-
-	const secondaryColor = theme.colorScheme === 'dark'
-		? theme.colors.dark[1]
-		: theme.colors.gray[7];
-
-	useEffect(() => {
-		setCoursesLoading(true);
-		axios.get('/main/courses')
-			.then(res => {
-				if (res.status === 200) {
-					setCourses(res.data);
-				} else {
-					setCoursesError('Ошибка получения списка курсов, пожалуйста, попробуйте позже');
-				}
-			})
-			.catch(error => {
-				console.log(error);
-				setCoursesError('Ошибка получения списка курсов, пожалуйста, попробуйте позже');
-			})
-			.finally(() => {
-				setCoursesLoading(false);
-			})
-	}, [])
 
 	return (
 		<div className={styles.container}>
@@ -50,20 +26,21 @@ export default function Home() {
 				<Text size="xl" weight={700} color="orange" transform="uppercase">
 					Доступные курсы
 				</Text>
-				<Text color="red" weight={500}>
-					{coursesError}
-				</Text>
 				<Space h="lg" />
-				{coursesLoading && <Loader color="orange" variant="bars" />}
+
 				<SimpleGrid cols={3}>
-					{!coursesLoading && courses.map(course => {
+					{courses.map(({ course, tasks, tasks_ready }) => {
 						return <Card p="lg" key={course.id} style={{ boxShadow: '0 0 12px #999', marginBottom: '20px' }}>
-							<Card.Section>
+
+							<Card.Section style={{ position: 'relative' }}>
+								<Text color="orange" size="lg" weight={600} style={{ position: 'absolute', bottom: '10px', left: '20px', zIndex: '10', filter: 'drop-shadow(0px 0px 4px #333)' }}>Прогресс</Text>
 								<Image src={'/' + course.image} width={300} height={180} alt="Инкубатор талантов" />
 							</Card.Section>
-
+							<Progress color="orange" size="lg" value={(tasks_ready / tasks) * 100} style={{ zIndex: '12' }} />
 							<Group position="apart" style={{ marginBottom: 5, marginTop: theme.spacing.sm }}>
 								<Text weight={500}>{course.name}</Text>
+
+
 							</Group>
 							<Link passHref href={`/courses/${course.id}`}>
 								<Button color="green" fullWidth style={{ marginTop: 14 }}>
@@ -77,3 +54,24 @@ export default function Home() {
 		</div>
 	)
 }
+
+export const getServerSideProps = withIronSessionSsr(
+	async function getServerSideProps({ req }) {
+		const response = await axios.get(`/public/courses`, {
+			headers: {
+				Cookie: `user-cookies=${req.cookies['user-cookies']};`
+			}
+		});
+		let courses = [];
+		if (response.status === 200) {
+			courses = response.data;
+		}
+		return {
+			props: {
+				courses: courses,
+				user: req.session.user,
+			}
+		};
+	},
+	sessionOptions
+);

@@ -1,77 +1,21 @@
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/router'
 import Head from 'next/head'
 import Image from 'next/image'
 import Link from 'next/link'
 
+import { sessionOptions } from '/lib/session';
+import { withIronSessionSsr } from "iron-session/next";
+
 import axios from '/utils/rest';
 
-import { SimpleGrid, Text, Container, Space, Card, Group, Center, Button, useMantineTheme, Loader } from '@mantine/core';
+import { Text, Container, Space, Card, Group, Center, Button, useMantineTheme, Progress, Title } from '@mantine/core';
 
-export default function Tasks() {
-	const router = useRouter()
-	const { id, day_id } = router.query
-	const [tasksLoading, setTasksLoading] = useState(false);
-	const [dayLoading, setDayLoading] = useState(false);
-	const [tasksError, setTasksError] = useState(false);
-	const [day, setDay] = useState([]);
-	const [course, setCourse] = useState([]);
-	const [dayError, setDayError] = useState([]);
-	const [tasks, setTasks] = useState([]);
+export default function Tasks({ course, day, tasks, tasks_ready }) {
 
 	const theme = useMantineTheme();
 
 	const secondaryColor = theme.colorScheme === 'dark'
 		? theme.colors.dark[1]
 		: theme.colors.gray[7];
-
-	useEffect(() => {
-		if (id && day_id) {
-			setTasksLoading(true);
-			setDayLoading(true);
-			axios.get(`/main/courses/${id}`)
-				.then(res => {
-					if (res.status === 200) {
-						if (res.data.length === 1) {
-							setCourse(res.data[0]);
-						}
-					}
-				})
-				.catch(error => {
-					console.log(error);
-				})
-			axios.get(`/main/courses/${id}/days/${day_id}`)
-				.then(res => {
-					if (res.status === 200) {
-						setDay(res.data);
-					} else {
-						setDayError('Ошибка получения курса, пожалуйста, попробуйте позже');
-					}
-				})
-				.catch(error => {
-					console.log(error);
-					setDayError('Ошибка получения курса, пожалуйста, попробуйте позже');
-				})
-				.finally(() => {
-					setDayLoading(false);
-				})
-			axios.get(`/main/courses/${id}/days/${day_id}/tasks`)
-				.then(res => {
-					if (res.status === 200) {
-						setTasks(res.data);
-					} else {
-						setTasksError('Ошибка получения списка заданий, пожалуйста, попробуйте позже');
-					}
-				})
-				.catch(error => {
-					console.log(error);
-					setTasksError('Ошибка получения списка заданий, пожалуйста, попробуйте позже');
-				})
-				.finally(() => {
-					setTasksLoading(false);
-				})
-		}
-	}, [id, day_id])
 
 	return (
 		<>
@@ -83,18 +27,17 @@ export default function Tasks() {
 			<Container>
 				<Space h="xl" />
 				<Card p="lg">
-					{dayLoading && <Loader color="orange" variant="bars" />}
-					<Card.Section>
+					<Card.Section style={{ position: 'relative' }}>
 						{day.image ?
 							<Image src={'/' + day.image} width={1200} height={550} alt="Инкубатор талантов" /> :
 							course.image ? <Image src={'/' + course.image} width={1200} height={550} alt="Инкубатор талантов" /> :
 								<></>
 						}
+						<Title order={1} weight={700} style={{ position: 'absolute', top: '20px', left: '20px', filter: 'drop-shadow(0px 0px 12px #FFF)', color: '#fd7e14' }}>{day.name}</Title>
+						<Text color="orange" size="xl" weight={600} style={{ position: 'absolute', bottom: '15px', left: '20px', zIndex: '10', filter: 'drop-shadow(0px 0px 4px #333)' }}>Прогресс</Text>
 					</Card.Section>
 
-					<Group position="apart" style={{ marginBottom: 5, marginTop: theme.spacing.sm }}>
-						<Text weight={500}>{day.name}</Text>
-					</Group>
+					<Progress color="orange" size="lg" value={(tasks_ready / tasks.length) * 100} style={{ zIndex: '12' }} />
 
 					<Text size="sm" weight={500} style={{ color: secondaryColor, lineHeight: 1.5 }}
 						dangerouslySetInnerHTML={{ __html: day.description }}>
@@ -111,12 +54,8 @@ export default function Tasks() {
 					</Center>
 
 					<Space h="lg" />
-					{tasksLoading && <Loader color="orange" variant="bars" />}
-					<Text color="red" weight={500}>
-						{tasksError}
-					</Text>
-					{!tasksLoading && tasks.map(task => {
-						return <Card p="lg" key={course.id} style={{ boxShadow: '0 0 12px #999', marginBottom: '20px' }}>
+					{tasks.map(task => {
+						return <Card p="lg" key={task.id} style={{ boxShadow: '0 0 12px #999', marginBottom: '20px' }}>
 							<Card.Section>
 								{task.image && <Image src={'/' + task.image} width={300} height={120} alt="Инкубатор талантов" />}
 							</Card.Section>
@@ -124,7 +63,7 @@ export default function Tasks() {
 							<Group position="apart" style={{ marginBottom: 5, marginTop: theme.spacing.sm }}>
 								<Text size="lg" weight={700} color="orange">{task.name}</Text>
 							</Group>
-							<Link passHref href={`/courses/${course.id}/days/${day_id}/tasks/${task.id}`}>
+							<Link passHref href={`/courses/${course.id}/days/${day.id}/tasks/${task.id}`}>
 								<Button color="green" fullWidth style={{ marginTop: 14 }}>
 									Открыть задание
 								</Button>
@@ -136,3 +75,34 @@ export default function Tasks() {
 		</>
 	)
 }
+
+export const getServerSideProps = withIronSessionSsr(
+	async function getServerSideProps({ req, query }) {
+		const { day_id } = query
+		const response = await axios.get(`/public/days/${day_id}`, {
+			headers: {
+				Cookie: `user-cookies=${req.cookies['user-cookies']};`
+			}
+		});
+		let course = {};
+		let day = {};
+		let tasks = [];
+		let tasks_ready = 0;
+		if (response.status === 200) {
+			course = response.data.course;
+			day = response.data.day;
+			tasks = response.data.tasks;
+			tasks_ready = response.data.tasks_ready;
+		}
+		return {
+			props: {
+				course: course,
+				day: day,
+				tasks: tasks,
+				tasks_ready: tasks_ready,
+				user: req.session.user,
+			}
+		};
+	},
+	sessionOptions
+);

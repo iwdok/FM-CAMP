@@ -1,32 +1,26 @@
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/router'
+import { useState } from 'react';
+import { useRouter } from 'next/router';
 import Head from 'next/head'
 import Image from 'next/image'
 import { nanoid } from 'nanoid'
 
+import { sessionOptions } from '/lib/session';
+import { withIronSessionSsr } from "iron-session/next";
+
 import axios from '/utils/rest';
-import { Dropzone, IMAGE_MIME_TYPE } from '@mantine/dropzone';
+import { Dropzone } from '@mantine/dropzone';
 import { showNotification } from '@mantine/notifications';
 
 
-import { Input, Text, Container, Space, Card, Group, Badge, Button, useMantineTheme, Loader, Grid, Alert } from '@mantine/core';
+import { Input, Text, Container, Space, Card, Group, Button, useMantineTheme, Grid, Center, Title } from '@mantine/core';
 import { Send, File, Upload, X, Check } from 'tabler-icons-react';
 
-export default function Task() {
-	const router = useRouter()
-	const { id, day_id, task_id } = router.query
-	const [taskLoading, setTaskLoading] = useState(false);
-	const [chatLoading, setChatLoading] = useState(false);
-	const [taskError, setTaskError] = useState(false);
-	const [day, setDay] = useState([]);
-	const [course, setCourse] = useState([]);
-	const [chatError, setChatError] = useState([]);
-	const [task, setTask] = useState([]);
-	const [chat, setChat] = useState([]);
-
+export default function Task({ task, day, course, task_status, messages }) {
+	const router = useRouter();
+	const { id, day_id, task_id } = router.query;
+	const [chat, setChat] = useState(messages);
 	const [acceptLoading, setAcceptLoading] = useState(false);
 
-	const [message, setMessage] = useState('');
 	const [files, setFiles] = useState([]);
 
 	const theme = useMantineTheme();
@@ -39,14 +33,13 @@ export default function Task() {
 		setAcceptLoading(true);
 		axios.post(`/main/courses/${id}/days/${day_id}/tasks/${task_id}/accept`)
 			.then(res => {
-				task.accepted = true;
-				setTask(task);
+				router.replace(router.asPath);
 			})
 			.catch(error => {
 
 			})
 			.finally(() => {
-				setAcceptLoading(false);
+				
 			})
 	}
 
@@ -120,63 +113,6 @@ export default function Task() {
 			})
 	}
 
-	useEffect(() => {
-		if (id && day_id && task_id) {
-			setTaskLoading(true);
-			setChatLoading(true);
-			axios.get(`/main/courses/${id}`)
-				.then(res => {
-					if (res.status === 200) {
-						if (res.data.length === 1) {
-							setCourse(res.data[0]);
-						}
-					}
-				})
-				.catch(error => {
-					console.log(error);
-				})
-			axios.get(`/main/courses/${id}/days/${day_id}`)
-				.then(res => {
-					if (res.status === 200) {
-						setDay(res.data);
-					}
-				})
-				.catch(error => {
-					console.log(error);
-				})
-			axios.get(`/main/courses/${id}/days/${day_id}/tasks/${task_id}`)
-				.then(res => {
-					if (res.status === 200) {
-						setTask(res.data);
-					} else {
-						setTaskError('Ошибка получения задания, пожалуйста, попробуйте позже');
-					}
-				})
-				.catch(error => {
-					console.log(error);
-					setTaskError('Ошибка получения задания, пожалуйста, попробуйте позже');
-				})
-				.finally(() => {
-					setTaskLoading(false);
-				})
-			axios.get(`/main/courses/${id}/days/${day_id}/tasks/${task_id}/chat`)
-				.then(res => {
-					if (res.status === 200) {
-						setChat(res.data);
-					} else {
-						setChatError('Ошибка получения чата, пожалуйста, попробуйте позже');
-					}
-				})
-				.catch(error => {
-					console.log(error);
-					setChatError('Ошибка получения чата, пожалуйста, попробуйте позже');
-				})
-				.finally(() => {
-					setChatLoading(false);
-				})
-		}
-	}, [id, day_id, task_id])
-
 	return (
 		<>
 			<Head>
@@ -187,26 +123,38 @@ export default function Task() {
 			<Container>
 				<Space h="xl" />
 				<Card p="lg">
-					{taskLoading && <Loader color="orange" variant="bars" />}
-					<Card.Section>
+					<Card.Section style={{ position: 'relative' }}>
 						{task.image ?
 							<Image src={'/' + task.image} width={1200} height={550} alt="Инкубатор талантов" /> :
 							day.image ? <Image src={'/' + day.image} width={1200} height={550} alt="Инкубатор талантов" /> :
 								course.image ? <Image src={'/' + course.image} width={1200} height={550} alt="Инкубатор талантов" /> :
 									<></>
 						}
+						<Title order={1} weight={700} style={{ position: 'absolute', top: '20px', left: '20px', filter: 'drop-shadow(0px 0px 12px #FFF)', color: '#fd7e14' }}>{task.name}</Title>
+						<Text color="orange" size="xl" weight={600} style={{ position: 'absolute', bottom: '15px', left: '20px', zIndex: '10', filter: 'drop-shadow(0px 0px 4px #333)' }}>Статус задания</Text>
 					</Card.Section>
-
-					<Group position="apart" style={{ marginBottom: 5, marginTop: theme.spacing.sm }}>
-						<Text weight={700} color="orange" size="xl">{task.name}</Text>
-					</Group>
-
+					<Space h="sm" />
+					{task_status === 'waiting'
+						?
+						<Text size="lg" weight={700} color="orange">
+							Ожидаем вашего ответа
+						</Text>
+						:
+						task_status === 'ready' ?
+							<Text size="lg" weight={700} color="green">
+								Задание выполнено, поздравляем!
+							</Text>
+							:
+							<Text size="lg" weight={700} color="blue">
+								Начните выполнение!
+							</Text>
+					}
 					<Text size="sm" weight={500} style={{ color: secondaryColor, lineHeight: 1.5 }}
 						dangerouslySetInnerHTML={{ __html: task.description }}>
 					</Text>
 
 					<Space h="lg" />
-					{task.accepted
+					{task_status !== 'empty'
 						?
 						<>
 							<Text weight={500} color="blue">
@@ -219,32 +167,27 @@ export default function Task() {
 								</Text>
 							})}
 							<Space h="md" />
-							{chatLoading && <Loader color="orange" variant="bars" />}
-							<Text color="red" weight={500}>
-								{chatError}
-							</Text>
-							<Space h="md" />
-							{!chatLoading && <Text color="orange" weight={500} size="lg">
+							<Text color="orange" weight={500} size="lg">
 								Общение с экспертом
-							</Text>}
-							{!chatLoading && <>
-								<div style={{ width: '100%', minHeight: '100px', backgroundColor: '#eee', border: '2px solid #ddd', borderRadius: '15px', padding: '20px' }}>
-									{chat.map(message => {
-										return <div style={{ backgroundColor: message.answer_id ? '#37c8b855' : '#f7670755', borderRadius: '15px', width: '70%', marginTop: '5px', padding: '5px' }} key={message}>
-											<Text size="sm">{message.answer_id ? 'Эксперт' : 'Вы'}:</Text>
-											<Text size="md" weight={500}>{message.message}</Text>
-											{message.files.map((file, index) => {
-												return <>
-													<Text key={file} variant="link" component="a" size="sm" href={`/${file}`}>
-														Скачать файл {index + 1}
-													</Text>
-													<Space h="sm" />
-												</>
-											})}
-										</div>
-									})}
-								</div>
-								{task.status !== 'ready' && 
+							</Text>
+
+							<div style={{ width: '100%', minHeight: '100px', backgroundColor: '#eee', border: '2px solid #ddd', borderRadius: '15px', padding: '20px' }}>
+								{chat.map(message => {
+									return <div style={{ backgroundColor: message.answer_id ? '#37c8b855' : '#f7670755', borderRadius: '15px', width: '70%', marginTop: '5px', padding: '5px' }} key={message.id}>
+										<Text size="sm">{message.answer_id ? 'Эксперт' : 'Вы'}:</Text>
+										<Text size="md" weight={500}>{message.message}</Text>
+										{message.files.map((file, index) => {
+											return <>
+												<Text key={file} variant="link" component="a" size="sm" href={`/${file}`}>
+													Скачать файл {index + 1}
+												</Text>
+												<Space h="sm" />
+											</>
+										})}
+									</div>
+								})}
+							</div>
+							{task_status !== 'ready' &&
 								<div>
 									<form onSubmit={(e) => sendMessage(e)} >
 										<Grid >
@@ -280,10 +223,7 @@ export default function Task() {
 										</Dropzone>
 									</form>
 								</div>}
-								{task.status === 'ready' && <Alert color="greed"> Вы выполнили задание!
-									</Alert>}
-							</>
-							}
+							{task_status === 'ready' && <Center><Text color="green" size="xl" weight={700}>Вы выполнили заданее, можете приступать к выполнению следующих</Text></Center>}
 						</>
 						:
 						<Button loading={acceptLoading} color="green" onClick={() => setAccepted(true)}>Приступить к выполнению</Button>}
@@ -293,3 +233,37 @@ export default function Task() {
 		</>
 	)
 }
+
+export const getServerSideProps = withIronSessionSsr(
+	async function getServerSideProps({ req, query }) {
+		const { task_id } = query;
+		const response = await axios.get(`/public/tasks/${task_id}`, {
+			headers: {
+				Cookie: `user-cookies=${req.cookies['user-cookies']};`
+			}
+		});
+		let course = {};
+		let day = {};
+		let task = [];
+		let task_status = 'empty';
+		let messages = [];
+		if (response.status === 200) {
+			course = response.data.course;
+			day = response.data.day;
+			task = response.data.task;
+			task_status = response.data.task_status;
+			messages = response.data.messages;
+		}
+		return {
+			props: {
+				course: course,
+				day: day,
+				task: task,
+				task_status: task_status,
+				messages: messages,
+				user: req.session.user,
+			}
+		};
+	},
+	sessionOptions
+);

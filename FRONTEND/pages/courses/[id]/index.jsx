@@ -1,70 +1,21 @@
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/router'
 import Head from 'next/head'
 import Image from 'next/image'
 import Link from 'next/link'
 
+import { sessionOptions } from '/lib/session';
+import { withIronSessionSsr } from "iron-session/next";
+
 import axios from '/utils/rest';
 
-import { SimpleGrid, Text, Container, Space, Card, Group, Badge, Button, useMantineTheme, Loader } from '@mantine/core';
+import { Text, Container, Space, Card, Group, Button, useMantineTheme, Progress, Title } from '@mantine/core';
 
-export default function Days() {
-	const router = useRouter()
-	console.log(router.query)
-	const { id } = router.query
-	const [daysLoading, setDaysLoading] = useState(false);
-	const [courseLoading, setCourseLoading] = useState(false);
-	const [daysError, setDaysError] = useState(false);
-	const [course, setCourse] = useState([]);
-	const [courseError, setCourseError] = useState([]);
-	const [days, setDays] = useState([]);
+export default function Days({ course, days, tasks, tasks_ready }) {
 
 	const theme = useMantineTheme();
 
 	const secondaryColor = theme.colorScheme === 'dark'
 		? theme.colors.dark[1]
 		: theme.colors.gray[7];
-
-	useEffect(() => {
-		if (id) {
-			setDaysLoading(true);
-			setCourseLoading(true);
-			axios.get(`/main/courses/${id}`)
-				.then(res => {
-					if (res.status === 200) {
-						if (res.data.length === 1) {
-							setCourse(res.data[0]);
-						} else {
-							setCourseError('У вас нет доступа к этому курсу');
-						}
-					} else {
-						setCourseError('Ошибка получения курса, пожалуйста, попробуйте позже');
-					}
-				})
-				.catch(error => {
-					console.log(error);
-					setCourseError('Ошибка получения курса, пожалуйста, попробуйте позже');
-				})
-				.finally(() => {
-					setCourseLoading(false);
-				})
-			axios.get(`/main/courses/${id}/days`)
-				.then(res => {
-					if (res.status === 200) {
-						setDays(res.data);
-					} else {
-						setDaysError('Ошибка получения списка дней, пожалуйста, попробуйте позже');
-					}
-				})
-				.catch(error => {
-					console.log(error);
-					setDaysError('Ошибка получения списка дней, пожалуйста, попробуйте позже');
-				})
-				.finally(() => {
-					setDaysLoading(false);
-				})
-		}
-	}, [id])
 
 	return (
 		<>
@@ -76,14 +27,13 @@ export default function Days() {
 			<Container>
 				<Space h="xl" />
 				<Card p="lg">
-					{courseLoading && <Loader color="orange" variant="bars" />}
-					<Card.Section>
+					<Card.Section style={{ position: 'relative' }}>
 						{course.image && <Image src={'/' + course.image} width={1200} height={550} alt="Инкубатор талантов" />}
+						<Title order={1} weight={700} style={{ position: 'absolute', top: '20px', left: '20px', filter: 'drop-shadow(0px 0px 12px #FFF)', color: '#fd7e14' }}>{course.name}</Title>
+						<Text color="orange" size="xl" weight={600} style={{ position: 'absolute', bottom: '15px', left: '20px', zIndex: '10', filter: 'drop-shadow(0px 0px 4px #333)' }}>Прогресс</Text>
 					</Card.Section>
 
-					<Group position="apart" style={{ marginBottom: 5, marginTop: theme.spacing.sm }}>
-						<Text weight={500}>{course.name}</Text>
-					</Group>
+					<Progress color="orange" size="lg" value={(tasks_ready / tasks) * 100} style={{ zIndex: '12' }} />
 
 					<Text size="sm" weight={500} style={{ color: secondaryColor, lineHeight: 1.5 }}
 						dangerouslySetInnerHTML={{ __html: course.description }}>
@@ -100,12 +50,8 @@ export default function Days() {
 					</Text>
 
 					<Space h="lg" />
-					{daysLoading && <Loader color="orange" variant="bars" />}
-					<Text color="red" weight={500}>
-						{daysError}
-					</Text>
-					{!daysLoading && days.map(day => {
-						return <Card p="lg" key={course.id} style={{ boxShadow: '0 0 12px #999', marginBottom: '20px' }}>
+					{days.map(day => {
+						return <Card p="lg" key={day.id} style={{ boxShadow: '0 0 12px #999', marginBottom: '20px' }}>
 							<Card.Section>
 								{day.image && <Image src={'/' + day.image} width={300} height={120} alt="Инкубатор талантов" />}
 							</Card.Section>
@@ -125,3 +71,34 @@ export default function Days() {
 		</>
 	)
 }
+
+export const getServerSideProps = withIronSessionSsr(
+	async function getServerSideProps({ req, res, query }) {
+		const { id } = query
+		const response = await axios.get(`/public/courses/${id}`, {
+			headers: {
+				Cookie: `user-cookies=${req.cookies['user-cookies']};`
+			}
+		});
+		let course = {};
+		let days = [];
+		let tasks = 0;
+		let tasks_ready = 0;
+		if (response.status === 200) {
+			course = response.data.course;
+			days = response.data.days;
+			tasks = response.data.tasks;
+			tasks_ready = response.data.tasks_ready;
+		}
+		return {
+			props: {
+				course: course,
+				days: days,
+				tasks: tasks,
+				tasks_ready: tasks_ready,
+				user: req.session.user,
+			}
+		};
+	},
+	sessionOptions
+);

@@ -3,7 +3,8 @@ import { useRouter } from 'next/router';
 import Head from 'next/head'
 import Image from 'next/image'
 import { nanoid } from 'nanoid'
-
+import styles from './messages.module.scss';
+console.log(styles)
 import { sessionOptions } from '/lib/session';
 import { withIronSessionSsr } from "iron-session/next";
 
@@ -12,7 +13,7 @@ import { Dropzone } from '@mantine/dropzone';
 import { showNotification } from '@mantine/notifications';
 
 
-import { Input, Text, Container, Space, Card, Group, Button, useMantineTheme, Grid, Center, Title } from '@mantine/core';
+import { Input, Text, Container, Space, Card, Group, Button, useMantineTheme, SimpleGrid, Center, Title } from '@mantine/core';
 import { Send, File, Upload, X, Check } from 'tabler-icons-react';
 
 export default function Task({ task, day, course, task_status, messages }) {
@@ -31,7 +32,7 @@ export default function Task({ task, day, course, task_status, messages }) {
 
 	const setAccepted = (status) => {
 		setAcceptLoading(true);
-		axios.post(`/main/courses/${id}/days/${day_id}/tasks/${task_id}/accept`)
+		axios.post(`/public/tasks/${task_id}/accept`)
 			.then(res => {
 				router.replace(router.asPath);
 			})
@@ -39,7 +40,7 @@ export default function Task({ task, day, course, task_status, messages }) {
 
 			})
 			.finally(() => {
-				
+
 			})
 	}
 
@@ -84,6 +85,9 @@ export default function Task({ task, day, course, task_status, messages }) {
 
 	const sendMessage = (e) => {
 		e.preventDefault();
+		if (e.target.message.value === ''){
+			return;
+		}
 		const body = new FormData();
 		body.append('message', e.target.message.value);
 		if (files) {
@@ -92,7 +96,7 @@ export default function Task({ task, day, course, task_status, messages }) {
 				body.append(`file_${index}`, files[index], `task_${nanoid()}.${files[index].path.split('.')[files[index].path.split('.').length - 1]}`);
 			}
 		}
-		axios.post(`/main/courses/${id}/days/${day_id}/tasks/${task_id}/answer`, body)
+		axios.post(`/public/tasks/${task_id}/answer`, body)
 			.then(res => {
 				e.target.reset();
 				showNotification({
@@ -171,9 +175,9 @@ export default function Task({ task, day, course, task_status, messages }) {
 								Общение с экспертом
 							</Text>
 
-							<div style={{ width: '100%', minHeight: '100px', backgroundColor: '#eee', border: '2px solid #ddd', borderRadius: '15px', padding: '20px' }}>
+							<div className={styles.messages}>
 								{chat.map(message => {
-									return <div style={{ backgroundColor: message.answer_id ? '#37c8b855' : '#f7670755', borderRadius: '15px', width: '70%', marginTop: '5px', padding: '5px' }} key={message.id}>
+									return <div className={`${styles.message} ${(message.answer_id ? styles.interlocutor : styles.you)}`} key={message.id}>
 										<Text size="sm">{message.answer_id ? 'Эксперт' : 'Вы'}:</Text>
 										<Text size="md" weight={500}>{message.message}</Text>
 										{message.files.map((file, index) => {
@@ -190,14 +194,11 @@ export default function Task({ task, day, course, task_status, messages }) {
 							{task_status !== 'ready' &&
 								<div>
 									<form onSubmit={(e) => sendMessage(e)} >
-										<Grid >
-											<Grid.Col span={10}>
-												<Input type="text" placeholder="Введите ваше сообщение" name="message" />
-											</Grid.Col>
-											<Grid.Col span={2}>
-												<Button variant="light" color="blue" type="submit" rightIcon={<Send />}>Отправить</Button>
-											</Grid.Col>
-										</Grid>
+										<div className={styles.input}>
+											<input type="text" placeholder="Введите ваше сообщение" name="message" />
+											<Send onClick={() => { document.getElementById('send-message').click() }} />
+											<button type="submit" id="send-message"></button>
+										</div>
 										<Space h="sm" />
 										{files.length > 0 && <>
 											<Text size="sm">Прикрепленные файлы: {files.map(el => {

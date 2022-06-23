@@ -5,22 +5,15 @@ import database from '/utils/database';
 
 const mainTaskHandler = async (req, res) => {
 	const { method } = req;
-	const { task_id } = req.query
+	const { id } = req.query
 	switch (method) {
-		case 'GET':
-			const tasks = await database.select('*').from('tasks').where({id: task_id });
+		case 'POST':
 			const user = await database.select('*').from('users').where({email: req.session.user.email}).limit(1);
-			const accepted = await database.select('*').from('accepted_tasks').where({task_id: task_id, user_id: user[0].id});
-			if (accepted.length > 0){
-				tasks[0].accepted = true;
-				tasks[0].status = accepted[0].status;
-			} else {
-				tasks[0].accepted = false;
-			}
-			res.status(200).json(tasks[0]);
+			await database('accepted_tasks').insert({task_id: id, user_id: user[0].id, status: 'waiting'});
+			res.status(200).json('accepted');
 			break;
 		default:
-			res.setHeader('Allow', ['GET']);
+			res.setHeader('Allow', ['POST']);
 			res.status(405).end(`Method ${method} Not Allowed`);
 	}
 }

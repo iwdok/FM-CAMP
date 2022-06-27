@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import axios from '/utils/rest';
 
-import { Space, Loader, Title, Button, Center, Container, Table } from '@mantine/core';
-import { Plus, TrashX, Edit, ListNumbers } from 'tabler-icons-react';
+import { Space, Loader, Title, Button, Center, Container, Table, Stack } from '@mantine/core';
+import { Plus, TrashX, Edit, ListNumbers, List } from 'tabler-icons-react';
 
 import { AddCourse } from './addCourse';
 import { DeleteCourse } from './deleteCourse';
@@ -81,6 +81,7 @@ export const CoursesControl = () => {
 						{/* <th>Описание</th> */}
 						<th>Количество дней</th>
 						<th>Количество участников</th>
+						<th>Действия</th>
 					</tr>
 				</thead>
 				<tbody>
@@ -91,29 +92,41 @@ export const CoursesControl = () => {
 							<td>{course.days}</td>
 							<td>{course.selected_users}</td>
 							<td>
-								<Center>
-									<ListNumbers
-										style={{ cursor: 'pointer', color: '#28a745' }}
+								<Stack>
+									<Button
+										variant="outline"
+										color="orange"
+										leftIcon={<List />}
 										onClick={() => {
 											setCourseId(course.id);
 											setDaysModalOpened(true);
 										}}
-									/>
-									<Edit
-										style={{ cursor: 'pointer', color: '#007bff' }}
+									>
+										Дни
+									</Button>
+									<Button
+										variant="outline"
+										color="blue"
+										leftIcon={<Edit />}
 										onClick={() => {
 											setEditCourseId(course.id);
 											setEditCourseModalOpened(true);
 										}}
-									/>
-									<TrashX
-										style={{ cursor: 'pointer', color: '#dc3545' }}
+									>
+										Редактировать
+									</Button>
+									<Button
+										variant="outline"
+										color="red"
+										leftIcon={<TrashX />}
 										onClick={() => {
 											setDeleteCourseId(course.id);
 											setDeleteCourseModalOpened(true);
 										}}
-									/>
-								</Center>
+									>
+										Удалить
+									</Button>
+								</Stack>
 							</td>
 						</tr>
 					})}

@@ -2,15 +2,14 @@ import { useState, useEffect } from 'react';
 import axios from '/utils/rest';
 
 import { Space, Loader, Title, Button, Center, Container, Table } from '@mantine/core';
-import { Plus, TrashX, Edit, ListNumbers } from 'tabler-icons-react';
+import { MessageCircle } from 'tabler-icons-react';
 
 import { Answer } from './answer';
 
 export const TasksCheck = () => {
 	const [answerModalOpened, setAnswerModalOpened] = useState(false);
 
-	const [userId, setUserId] = useState(-1);
-	const [taskId, setTaskId] = useState(-1);
+	const [task, setTask] = useState(-1);
 
 	const [tasksLoading, setTasksLoading] = useState(true);
 	const [tasksList, setTasksList] = useState([]);
@@ -38,25 +37,33 @@ export const TasksCheck = () => {
 			<Table verticalSpacing="sm" striped highlightOnHover>
 				<thead>
 					<tr>
-						<th>Название</th>
-						<th>Пользователь</th>
+						<th>День</th>
+						<th>Задание</th>
+						<th>Талант</th>
+						<th>Email таланта</th>
+						<th>Действия</th>
 					</tr>
 				</thead>
 				<tbody>
 					{!tasksLoading && tasksList.map(task => {
 						return <tr key={task.task.id}>
+							<td>{task.day.name}</td>
 							<td>{task.task.name}</td>
+							<td>{`${task.user.name} ${task.user.surname}`}</td>
 							<td>{task.user.email}</td>
 							<td>
 								<Center>
-									<ListNumbers
-										style={{ cursor: 'pointer', color: '#28a745' }}
+									<Button
+										variant="outline"
+										color="orange"
+										leftIcon={<MessageCircle />}
 										onClick={() => {
-											setTaskId(task.task.id);
-											setUserId(task.user.id);
+											setTask(task);
 											setAnswerModalOpened(true);
 										}}
-									/>
+									>
+										Ответить
+									</Button>
 								</Center>
 							</td>
 						</tr>
@@ -68,7 +75,7 @@ export const TasksCheck = () => {
 			<Center>
 				{tasksListError}
 			</Center>
-			<Answer opened={answerModalOpened} setOpened={setAnswerModalOpened} taskId={taskId} userId={userId}/>
+			<Answer opened={answerModalOpened} setOpened={setAnswerModalOpened} task={task} />
 		</Container>
 	)
 }

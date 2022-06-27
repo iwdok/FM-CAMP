@@ -1,8 +1,7 @@
 import { useEffect, useState } from 'react';
 
-import { Modal, InputWrapper, Input, Textarea, Group, Text, Space, Button, useMantineTheme, Center, Title, Table } from '@mantine/core';
-import { showNotification } from '@mantine/notifications';
-import { Upload, X, Photo, Check, Plus, TrashX, Edit, ListNumbers, Loader } from 'tabler-icons-react';
+import { Modal, Stack, Space, Button, useMantineTheme, Center, Table } from '@mantine/core';
+import { Plus, TrashX, Edit, List, Loader } from 'tabler-icons-react';
 import axios from '/utils/rest';
 
 import { AddDay } from './addDay';
@@ -45,7 +44,7 @@ export const Days = ({ opened, setOpened, courseId }) => {
 	}, [courseId]);
 
 	const pushDay = (day) => {
-		setDaysList([day, ...daysList]);
+		setDaysList([...daysList, day]);
 	}
 
 	const removeDay = (id) => {
@@ -69,7 +68,7 @@ export const Days = ({ opened, setOpened, courseId }) => {
 			opened={opened}
 			onClose={() => setOpened(false)}
 			title="Список дней"
-			size="lg"
+			size="xl"
 			transition="fade"
 			transitionDuration={300}
 			transitionTimingFunction="ease"
@@ -91,6 +90,7 @@ export const Days = ({ opened, setOpened, courseId }) => {
 						<th>Изображение</th>
 						<th>Видео</th>
 						<th>Количесво заданий</th>
+						<th>Действия</th>
 					</tr>
 				</thead>
 				<tbody>
@@ -98,33 +98,45 @@ export const Days = ({ opened, setOpened, courseId }) => {
 						return <tr key={day.id}>
 							<td>{day.name}</td>
 							{/* <td>{course.description || 'Нет описания' }</td> */}
-							<td>{day.image ? 'Прикреплено' : 'Не прикреплено'}</td>
-							<td>{day.video ? 'Прикреплено' : 'Не прикреплено'}</td>
-							<td>{day.tasks}</td>
+							<td>{day.image ? 'Есть' : 'Нет'}</td>
+							<td>{day.video ? 'Есть' : 'Нет'}</td>
+							<td>{day.connected_tasks}</td>
 							<td>
-								<Center>
-									<ListNumbers
-										style={{ cursor: 'pointer', color: '#28a745' }}
+								<Stack>
+									<Button
+										variant="outline"
+										color="orange"
+										leftIcon={<List />}
 										onClick={() => {
 											setTasksId(day.id);
 											setTasksModalOpened(true);
 										}}
-									/>
-									<Edit
-										style={{ cursor: 'pointer', color: '#007bff' }}
+									>
+										Задания
+									</Button>
+									<Button
+										variant="outline"
+										color="blue"
+										leftIcon={<Edit />}
 										onClick={() => {
 											setEditDayId(day.id);
 											setEditDayModalOpened(true);
 										}}
-									/>
-									<TrashX
-										style={{ cursor: 'pointer', color: '#dc3545' }}
+									>
+										Редактировать
+									</Button>
+									<Button
+										variant="outline"
+										color="red"
+										leftIcon={<TrashX />}
 										onClick={() => {
 											setDeleteDayId(day.id);
 											setDeleteDayModalOpened(true);
 										}}
-									/>
-								</Center>
+									>
+										Удалить
+									</Button>
+								</Stack>
 							</td>
 						</tr>
 					})}

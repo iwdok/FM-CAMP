@@ -4,7 +4,6 @@ import Head from 'next/head'
 import Image from 'next/image'
 import { nanoid } from 'nanoid'
 import styles from './messages.module.scss';
-console.log(styles)
 import { sessionOptions } from '/lib/session';
 import { withIronSessionSsr } from "iron-session/next";
 

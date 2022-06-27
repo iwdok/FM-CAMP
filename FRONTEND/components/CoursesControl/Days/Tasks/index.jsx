@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 
-import { Modal, InputWrapper, Input, Textarea, Group, Text, Space, Button, useMantineTheme, Center, Title, Table } from '@mantine/core';
+import { Modal, InputWrapper, Input, Stack, Space, Button, useMantineTheme, Center, Title, Table } from '@mantine/core';
 import { showNotification } from '@mantine/notifications';
 import { Upload, X, Photo, Check, Plus, TrashX, Edit, ListNumbers, Loader } from 'tabler-icons-react';
 import axios from '/utils/rest';
@@ -66,7 +66,7 @@ export const Tasks = ({ opened, setOpened, courseId, dayId }) => {
 			opened={opened}
 			onClose={() => setOpened(false)}
 			title="Список заданий"
-			size="lg"
+			size="xl"
 			transition="fade"
 			transitionDuration={300}
 			transitionTimingFunction="ease"
@@ -84,35 +84,42 @@ export const Tasks = ({ opened, setOpened, courseId, dayId }) => {
 				<thead>
 					<tr>
 						<th>Название</th>
-						{/* <th>Описание</th> */}
 						<th>Изображение</th>
 						<th>Количество прикрепленных файлов</th>
+						<th>Действия</th>
 					</tr>
 				</thead>
 				<tbody>
 					{!tasksLoading && tasksList.map(task => {
 						return <tr key={task.id}>
 							<td>{task.name}</td>
-							{/* <td>{course.description || 'Нет описания' }</td> */}
-							<td>{task.image ? 'Прикреплено' : 'Не прикреплено'}</td>
+							<td>{task.image ? 'Есть' : 'Нет'}</td>
 							<td>{task.files.length}</td>
 							<td>
-								<Center>
-									<Edit
-										style={{ cursor: 'pointer', color: '#007bff' }}
+								<Stack>
+									<Button
+										variant="outline"
+										color="blue"
+										leftIcon={<Edit />}
 										onClick={() => {
 											setEditTaskId(task.id);
 											setEditTaskModalOpened(true);
 										}}
-									/>
-									<TrashX
-										style={{ cursor: 'pointer', color: '#dc3545' }}
+									>
+										Редактировать
+									</Button>
+									<Button
+										variant="outline"
+										color="red"
+										leftIcon={<TrashX />}
 										onClick={() => {
 											setDeleteTaskId(task.id);
 											setDeleteTaskModalOpened(true);
 										}}
-									/>
-								</Center>
+									>
+										Удалить
+									</Button>
+								</Stack>
 							</td>
 						</tr>
 					})}
@@ -123,7 +130,7 @@ export const Tasks = ({ opened, setOpened, courseId, dayId }) => {
 			<Center>
 				{tasksListError}
 			</Center>
-			<AddTask opened={addTaskModalOpened} setOpened={setAddTaskModalOpened} pushTask={pushTask} courseId={courseId} dayId={dayId}/>
+			<AddTask opened={addTaskModalOpened} setOpened={setAddTaskModalOpened} pushTask={pushTask} courseId={courseId} dayId={dayId} />
 			<DeleteTask opened={deleteTaskModalOpened} setOpened={setDeleteTaskModalOpened} removeTask={removeTask} courseId={courseId} dayId={dayId} deleteTaskId={deleteTaskId} />
 		</Modal>
 	)

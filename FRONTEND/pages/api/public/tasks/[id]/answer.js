@@ -14,7 +14,7 @@ export const config = {
 
 const mainAnswerHandler = async (req, res) => {
 	const { method } = req;
-	const { task_id } = req.query
+	const { id } = req.query
 	switch (method) {
 		case 'POST':
 			const form = new formidable.IncomingForm();
@@ -29,23 +29,23 @@ const mainAnswerHandler = async (req, res) => {
 					path.push(saveFile(files[key]));
 				}
 				const user = await database.select('*').from('users').where({ email: req.session.user.email }).limit(1);
-				if (user[0].status === 'user') {
-					const new_id = await database('task_messages').returning('id').insert({ task_id: task_id, user_id: user[0].id, message: fields.message, files: JSON.stringify(path) });
-					await database('accepted_tasks').update({ status: 'check' }).where({ task_id: task_id, user_id: user[0].id });
+				if (user[0].status === 'user' || true) {
+					const new_id = await database('task_messages').returning('id').insert({ task_id: id, user_id: user[0].id, message: fields.message, files: JSON.stringify(path) });
+					await database('accepted_tasks').update({ status: 'check' }).where({ task_id: id, user_id: user[0].id });
 					res.status(200).json({
 						id: new_id[0].id,
 						user_id: user[0].id,
-						task_id: task_id,
+						task_id: id,
 						message: fields.message,
 						files: path
 					});
 				} else {
-					const new_id = await database('task_messages').returning('id').insert({ task_id: task_id, user_id: fields.user_id, message: fields.message, files: JSON.stringify(path), answer_id: user[0].id });
-					await database('accepted_tasks').update({ status: fields.status }).where({ task_id: task_id, user_id: fields.user_id });
+					const new_id = await database('task_messages').returning('id').insert({ task_id: id, user_id: fields.user_id, message: fields.message, files: JSON.stringify(path), answer_id: user[0].id });
+					await database('accepted_tasks').update({ status: fields.status }).where({ task_id: id, user_id: fields.user_id });
 					res.status(200).json({
 						id: new_id[0].id,
 						user_id: user[0].id,
-						task_id: task_id,
+						task_id: id,
 						message: fields.message,
 						files: path
 					});

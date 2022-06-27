@@ -16,18 +16,12 @@ const daysHandler = async (req, res) => {
 	const { id } = req.query
 	switch (method) {
 		case 'GET':
-			const days = await database.select('*').from('days').where({ course_id: id });
-			const connected_tasks = await database.select('id').from('tasks').whereIn('day_id', days.map(el => el.id));
-			res.status(200).json(days.map(day => {
-				return {
-					id: day.id,
-					name: day.name,
-					description: day.desciption,
-					image: day.image,
-					video: day.video,
-					tasks: connected_tasks.filter(el => el.day_id === day.id).length,
-				}
-			}));
+			let days = await database.select('*').from('days').where({ course_id: id });
+			for (let index in days){
+				const connected_tasks = await database.select('id').from('tasks').where('day_id', days[index].id);
+				days[index].connected_tasks = connected_tasks.length
+			}
+			res.status(200).json(days);
 			break;
 		case 'POST':
 			const form = new formidable.IncomingForm();

@@ -71,13 +71,14 @@ export const AddDay = ({ opened, setOpened, pushDay, courseId }) => {
 			return;
 		}
 
-
 		setLoading(true);
 
 		const body = new FormData();
 		body.append("name", e.target.name.value);
 		body.append("description", description);
-		body.append("video", e.target.video.value);
+		const youtubeRegExp = /(?:https?:\/\/)?(?:www\.)?youtu(?:be)?\.(?:com|be)(?:\/watch\/?\?v=|\/embed\/|\/shorts\/|\/)(\w+)/;
+		const video_id = youtubeRegExp.exec(e.target.video.value);
+		body.append("video", 'https://www.youtube.com/embed/' + video_id[1]);
 		if (image){
 			body.append("image", image, `day_${nanoid()}`);
 		}

@@ -30,7 +30,7 @@ const coursesHandler = async (req, res) => {
 					image: course.image,
 					start_date: course.start_date,
 					end_date: course.end_date,
-					days: days.filter(el => el.course_id === course.id).length,
+					days: days.length,
 					selected_users: connectedAlreadyUsers.filter(el => el.course_id === course.id).length
 				}
 			}));

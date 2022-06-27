@@ -6,22 +6,26 @@ import { showNotification } from '@mantine/notifications';
 import { Dropzone, IMAGE_MIME_TYPE } from '@mantine/dropzone';
 import { Upload, X, File, Check, Send } from 'tabler-icons-react';
 import axios from '/utils/rest';
+import styles from './messages.module.scss';
 
-export const Answer = ({ opened, setOpened, taskId, userId }) => {
+export const Answer = ({ opened, setOpened, task }) => {
 
 	const theme = useMantineTheme();
 
 	const [chatLoading, setChatLoading] = useState(false);
 	const [chat, setChat] = useState([]);
 
+	const [taskStatus, setTaskStatus] = useState('check');
+
 	const [files, setFiles] = useState([]);
 
 	useEffect(() => {
-		if (taskId, userId) {
-			axios.get(`/to_check/${taskId}/${userId}/chat`)
+		if (task.task) {
+			axios.get(`/to_check/${task.task.id}/${task.user.id}/chat`)
 				.then(res => {
 					if (res.status === 200) {
 						setChat(res.data);
+						setTaskStatus(task.task.status);
 					} else {
 						setChatError('Ошибка получения чата, пожалуйста, попробуйте позже');
 					}
@@ -34,7 +38,7 @@ export const Answer = ({ opened, setOpened, taskId, userId }) => {
 					setChatLoading(false);
 				})
 		}
-	}, [taskId, userId]);
+	}, [task]);
 
 	const getIconColor = (status, theme) => {
 		return status.accepted
@@ -79,15 +83,16 @@ export const Answer = ({ opened, setOpened, taskId, userId }) => {
 		e.preventDefault();
 		const body = new FormData();
 		body.append('message', e.target.message.value);
-		body.append('user_id', userId.toString());
-		body.append('status', e.target.status.value === 'Исправить' ? 'waiting' : 'ready');
+		body.append('user_id', task.user.id.toString());
+		body.append('status', e.target.status.value === 'Доработать' ? 'waiting' : 'ready');
+		setTaskStatus('Доработать' ? 'waiting' : 'ready');
 		if (files) {
 			for (let index in files) {
 				console.log(files[index].path);
 				body.append(`file_${index}`, files[index], `task_${nanoid()}.${files[index].path.split('.')[files[index].path.split('.').length - 1]}`);
 			}
 		}
-		axios.post(`/to_check/${taskId}/answer`, body)
+		axios.post(`/to_check/${task.task.id}/answer`, body)
 			.then(res => {
 				e.target.reset();
 				showNotification({
@@ -107,25 +112,33 @@ export const Answer = ({ opened, setOpened, taskId, userId }) => {
 
 			})
 	}
-
 	return (
 		<Modal
 			opened={opened}
 			onClose={() => setOpened(false)}
-			title="Ответить"
-			size="lg"
+			title={`Ответ на задание ${task.task && task.task.name}`}
+			size="xl"
 			transition="fade"
 			transitionDuration={300}
 			transitionTimingFunction="ease"
 		>
-			{!chatLoading && <Text color="orange" weight={500} size="lg">
-				Общение с учеником
-			</Text>}
 			{!chatLoading && <>
-				<div style={{ width: '100%', minHeight: '100px', backgroundColor: '#eee', border: '2px solid #ddd', borderRadius: '15px', padding: '20px' }}>
+				<Text>
+					{task.day && task.day.name}
+				</Text>
+				<Text color="blue">
+					Статус задания: {taskStatus === 'check' ? 'Ожидает проверки' : taskStatus === 'waiting' ? 'На доработке' : 'Готово'}
+				</Text>
+				<Text color="orange" weight={500} size="lg">
+					Общение с талантом {task.user && `${task.user.name} ${task.user.surname}`}
+				</Text>
+				<Space h="md" />
+			</>}
+			{!chatLoading && <>
+				<div className={styles.messages}>
 					{chat.map(message => {
-						return <div style={{ backgroundColor: message.answer_id ? '#37c8b855' : '#f7670755', borderRadius: '15px', width: '70%', marginTop: '5px', padding: '5px' }} key={message.id}>
-							<Text size="sm">{message.answer_id ? 'Вы' : 'Ученик'}:</Text>
+						return <div className={`${styles.message} ${(message.answer_id ? styles.you : styles.interlocutor)}`} key={message.id}>
+							<Text size="sm">{message.answer_id ? 'Вы' : `Талант ${task.user.name} ${task.user.surname}`}:</Text>
 							<Text size="md" weight={500}>{message.message}</Text>
 							{message.files.map((file, index) => {
 								return <>
@@ -140,22 +153,21 @@ export const Answer = ({ opened, setOpened, taskId, userId }) => {
 				</div>
 				<div>
 					<form onSubmit={(e) => sendMessage(e)} >
-						<Grid >
-							<Grid.Col span={10}>
-								<Input type="text" placeholder="Введите ваше сообщение" name="message" />
-							</Grid.Col>
-							<Grid.Col span={2}>
-								<Button variant="light" color="blue" type="submit" rightIcon={<Send />}>Отправить</Button>
-							</Grid.Col>
-						</Grid>
+						<div className={styles.input}>
+							<input type="text" placeholder="Введите ваше сообщение" name="message" />
+							<Send onClick={() => { document.getElementById('send-message').click() }} />
+							<button type="submit" id="send-message"></button>
+						</div>
+						<Space h="md" />
 						<NativeSelect
-							data={['Сделано', 'Исправить']}
+							data={['Сделано', 'Доработать']}
 							placeholder="Выберите вариант"
 							label="Выберите статус задания"
+							description="Этот статус относится к вашему ответу и не отражает текущий статус задания"
 							required
 							name="status"
 						/>
-						<Space h="sm" />
+						<Space h="md" />
 						{files.length > 0 && <>
 							<Text size="sm">Прикрепленные файлы: {files.map(el => {
 								return ` ${el.name},`

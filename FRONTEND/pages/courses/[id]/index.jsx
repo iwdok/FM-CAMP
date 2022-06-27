@@ -50,21 +50,25 @@ export default function Days({ course, days, tasks, tasks_ready }) {
 					</Text>
 
 					<Space h="lg" />
-					{days.map(day => {
-						return <Card p="lg" key={day.id} style={{ boxShadow: '0 0 12px #999', marginBottom: '20px' }}>
-							<Card.Section>
-								{day.image && <Image src={'/' + day.image} width={300} height={120} alt="Инкубатор талантов" />}
-							</Card.Section>
+					{days.map((day, index) => {
+						if (!days[index - 1] || days[index - 1].show_day) {
+							return <Card p="lg" key={day.id} style={{ boxShadow: '0 0 12px #999', marginBottom: '20px' }}>
+								<Card.Section>
+									{day.image && <Image src={'/' + day.image} width={300} height={120} alt="Инкубатор талантов" />}
+								</Card.Section>
 
-							<Group position="apart" style={{ marginBottom: 5, marginTop: theme.spacing.sm }}>
-								<Text size="lg" weight={700} color="orange">{day.name}</Text>
-							</Group>
-							<Link passHref href={`/courses/${course.id}/days/${day.id}`}>
-								<Button color="green" fullWidth style={{ marginTop: 14 }}>
-									Открыть день
-								</Button>
-							</Link>
-						</Card>
+								<Group position="apart" style={{ marginBottom: 5, marginTop: theme.spacing.sm }}>
+									<Text size="lg" weight={700} color="orange">{day.name}</Text>
+								</Group>
+								<Link passHref href={`/courses/${course.id}/days/${day.id}`}>
+									<Button color="green" fullWidth style={{ marginTop: 14 }}>
+										Открыть день
+									</Button>
+								</Link>
+							</Card>
+						} else {
+							return <div key={day.id}></div>
+						}
 					})}
 				</Card>
 			</Container>

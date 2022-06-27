@@ -45,6 +45,7 @@ const mainAnswerHandler = async (req, res) => {
 					res.status(200).json({
 						id: new_id[0].id,
 						user_id: user[0].id,
+						answer_id: user[0].id,
 						task_id: task_id,
 						message: fields.message,
 						files: path

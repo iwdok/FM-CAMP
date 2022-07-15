@@ -78,6 +78,14 @@ export default function Tasks({ course, day, tasks, tasks_ready }) {
 
 export const getServerSideProps = withIronSessionSsr(
 	async function getServerSideProps({ req, query }) {
+		if (!req.cookies['user-cookies']) {
+			return {
+				redirect: {
+					destination: '/auth',
+					permanent: false,
+				}
+			}
+		}
 		const { day_id } = query
 		const response = await axios.get(`/public/days/${day_id}`, {
 			headers: {

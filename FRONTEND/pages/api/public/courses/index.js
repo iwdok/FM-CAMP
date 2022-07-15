@@ -5,6 +5,10 @@ import database from '/utils/database';
 
 const mainCoursesHandler = async (req, res) => {
 	const { method } = req;
+	if (!req.session.user || !req.session.user.email) {
+		res.status(302).send('/auth');
+		return;
+	}
 	switch (method) {
 		case 'GET':
 			const courses = await database.select('*').from('courses');

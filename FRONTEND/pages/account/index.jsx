@@ -3,7 +3,7 @@ import styles from './account.module.scss';
 
 import useUser from '/lib/useUser.js';
 import { MyAccount } from '/components/MyAccount';
-import { CoursesControl } from '/components/CoursesControl';
+import { CoursesControl } from '/components/CoursesControl/Courses';
 import { UsersControl } from '/components/UsersControl';
 import { TasksCheck } from '/components/TasksCheck';
 

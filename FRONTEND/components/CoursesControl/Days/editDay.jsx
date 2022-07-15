@@ -8,7 +8,7 @@ import { Dropzone, IMAGE_MIME_TYPE } from '@mantine/dropzone';
 import { Upload, X, Photo, Check } from 'tabler-icons-react';
 import axios from '/utils/rest';
 
-export const AddDay = ({ opened, setOpened, pushDay, courseId }) => {
+export const EditDay = ({ opened, setOpened, pushDay, courseId }) => {
 	const [loading, setLoading] = useState(false);
 
 	const [addError, setAddError] = useState('');
@@ -79,7 +79,7 @@ export const AddDay = ({ opened, setOpened, pushDay, courseId }) => {
 		const youtubeRegExp = /(?:https?:\/\/)?(?:www\.)?youtu(?:be)?\.(?:com|be)(?:\/watch\/?\?v=|\/embed\/|\/shorts\/|\/)(\w+)/;
 		const video_id = youtubeRegExp.exec(e.target.video.value);
 		body.append("video", 'https://www.youtube.com/embed/' + video_id[1]);
-		if (image){
+		if (image) {
 			body.append("image", image, `day_${nanoid()}`);
 		}
 		axios.post(`/courses/${courseId}/days`, body)
@@ -120,7 +120,7 @@ export const AddDay = ({ opened, setOpened, pushDay, courseId }) => {
 			transitionDuration={300}
 			transitionTimingFunction="ease"
 		>
-			<form onSubmit={saveDay}>
+			{description.length > 0 && <form onSubmit={saveDay}>
 				<LoadingOverlay visible={loading} />
 				<InputWrapper required label="Название дня" description="Название дня в свободной форме, будет отображаться в качесвте заголовка" error={nameError}>
 					<Input type="text" name="name" />
@@ -186,7 +186,7 @@ export const AddDay = ({ opened, setOpened, pushDay, courseId }) => {
 				<Center>
 					<Text color="red">{addError}</Text>
 				</Center>
-			</form>
+			</form>}
 		</Modal>
 	)
 }

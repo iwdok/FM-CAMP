@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import axios from '/utils/rest';
 
-import { Space, Loader, Title, Button, Center, Container, Table } from '@mantine/core';
+import { Space, Loader, Title, Button, Center, Container, Table, Stack } from '@mantine/core';
 import { Plus, TrashX, Edit } from 'tabler-icons-react';
 
 import { AddUser } from './addUser';
@@ -75,8 +75,7 @@ export const UsersControl = () => {
 				<thead>
 					<tr>
 						<th>Электронная почта</th>
-						<th>Имя</th>
-						<th>Фамилия</th>
+						<th>ФИ</th>
 						<th>Возраст</th>
 						<th>Пароль</th>
 						<th>Статус</th>
@@ -87,28 +86,35 @@ export const UsersControl = () => {
 					{!usersLoading && usersList.map(user => {
 						return <tr key={user.id}>
 							<td>{user.email}</td>
-							<td>{user.name}</td>
-							<td>{user.surname}</td>
+							<td>{user.surname} {user.name}</td>
 							<td>{user.age}</td>
 							<td>{user.password}</td>
 							<td>{user.status === 'user' ? 'Ученик' : 'Администратор'}</td>
 							<td>
-								<Center>
-									<Edit
+								<Stack>
+									<Button
+										variant="outline"
+										color="blue"
+										leftIcon={<Edit />}
 										onClick={() => {
 											setEditUserId(user.id);
 											setEditUserModalOpened(true);
 										}}
-										style={{ cursor: 'pointer', color: '#007bff' }}
-									/>
-									<TrashX
+									>
+										Редактировать
+									</Button>
+									<Button
+										variant="outline"
+										color="red"
+										leftIcon={<TrashX />}
 										onClick={() => {
 											setDeleteUserId(user.id);
 											setDeleteUserModalOpened(true);
 										}}
-										style={{ cursor: 'pointer', color: '#dc3545' }}
-									/>
-								</Center>
+									>
+										Удалить
+									</Button>
+								</Stack>
 							</td>
 						</tr>
 					})}

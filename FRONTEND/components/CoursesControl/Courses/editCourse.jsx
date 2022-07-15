@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import Image from 'next/image';
 
 import { Modal, InputWrapper, Input, Group, Text, Space, Button, useMantineTheme, Center, LoadingOverlay, MultiSelect } from '@mantine/core';
 import RichTextEditor from '/components/RichText';
@@ -15,7 +16,7 @@ export const EditCourse = ({ opened, setOpened, updateCoursesList, editCourseId 
 	const [nameError, setNameError] = useState('');
 
 	const [nameDefaultValue, setNameDefaultValue] = useState('');
-	
+
 	const [description, setDescription] = useState('');
 	const [image, setImage] = useState('');
 	const [createObjectURL, setCreateObjectURL] = useState(null);
@@ -43,14 +44,14 @@ export const EditCourse = ({ opened, setOpened, updateCoursesList, editCourseId 
 
 	useEffect(() => {
 		if (editCourseId !== -1) {
+			setDescription('');
 			setSelectedUsers([]);
 			setLoading(true);
 			axios.get(`/courses/${editCourseId}`)
 				.then(res => {
-					console.log(res.data)
 					if (res.status === 200) {
-						console.log(res.data);
 						setNameDefaultValue(res.data.name);
+						console.log('description set')
 						setDescription(res.data.description);
 						setImage(res.data.image);
 						axios.get(`/courses/${editCourseId}/users`)
@@ -58,7 +59,7 @@ export const EditCourse = ({ opened, setOpened, updateCoursesList, editCourseId 
 								if (res.status === 200) {
 									setSelectedUsers(res.data);
 								} else {
-									setAddError('Ошибка редактирования курса, попробуйте позже');
+									setEditError('Ошибка редактирования курса, попробуйте позже');
 								}
 							})
 							.catch(error => {
@@ -71,7 +72,7 @@ export const EditCourse = ({ opened, setOpened, updateCoursesList, editCourseId 
 								setLoading(false);
 							})
 					} else {
-						setAddError('Ошибка редактирования курса, попробуйте позже');
+						setEditError('Ошибка редактирования курса, попробуйте позже');
 					}
 				})
 				.catch(error => {
@@ -126,7 +127,7 @@ export const EditCourse = ({ opened, setOpened, updateCoursesList, editCourseId 
 
 	const dropzoneChildren = (status, theme) => (
 		<Group position="center" spacing="xl" style={{ minHeight: 220, pointerEvents: 'none' }}>
-			{image ? <img src={image} width={100} /> :
+			{image ? <Image src={createObjectURL ? createObjectURL : '/' + image} width={100} height={70} alt="Изображение курса" /> :
 				<ImageUploadIcon status={status} style={{ color: getIconColor(status, theme) }} size={80} />}
 			<div>
 				<Text size="xl" inline>
@@ -157,12 +158,15 @@ export const EditCourse = ({ opened, setOpened, updateCoursesList, editCourseId 
 
 		const body = new FormData();
 		body.append("name", e.target.name.value);
-		body.append("description", e.target.description.value);
-		body.append("image", image, `course_${e.target.name.value}.${image.path.split('.')[image.path.split('.').length - 1]}`);
+		body.append("description", description);
+		if (image && image.path) {
+			body.append("image", image, `course_${nanoid()}`);
+		}
 		axios.put(`/courses/${editCourseId}`, body)
 			.then(res => {
 				if (res.status === 200) {
-					pushCourse(res.data);
+					console.log(updateCoursesList);
+					updateCoursesList(res.data.course);
 					showNotification({
 						title: 'Курс изменен',
 						autoClose: 3500,
@@ -170,15 +174,15 @@ export const EditCourse = ({ opened, setOpened, updateCoursesList, editCourseId 
 						icon: <Check size={18} />,
 					});
 				} else {
-					setAddError('Ошибка изменения курса, попробуйте позже');
+					setEditError('Ошибка изменения курса, попробуйте позже');
 				}
 			})
 			.catch(error => {
 				console.log(error)
 				if (error.response.status === 409) {
-					setAddError('Такое название курса уже занято');
+					setEditError('Такое название курса уже занято');
 				} else {
-					setAddError('Ошибка изменения курса, попробуйте позже');
+					setEditError('Ошибка изменения курса, попробуйте позже');
 				}
 			})
 			.finally(() => {
@@ -189,14 +193,14 @@ export const EditCourse = ({ opened, setOpened, updateCoursesList, editCourseId 
 	return (
 		<Modal
 			opened={opened}
-			onClose={() => setOpened(false)}
+			onClose={() => { setOpened(false) }}
 			title="Редактировать курс"
 			size="lg"
 			transition="fade"
 			transitionDuration={300}
 			transitionTimingFunction="ease"
 		>
-			<form onSubmit={saveCourse}>
+			{description.length > 0 && <form onSubmit={saveCourse}>
 				<LoadingOverlay visible={loading} />
 				<InputWrapper required label="Название курса" description="Название курса в свободной форме, будет отображаться в качесвте заголовка" error={nameError}>
 					<Input type="text" name="name" value={nameDefaultValue} onChange={e => setNameDefaultValue(e.currentTarget.value)} />
@@ -205,7 +209,9 @@ export const EditCourse = ({ opened, setOpened, updateCoursesList, editCourseId 
 				<RichTextEditor
 					name="description"
 					value={description}
-					onChange={value => { setDescription(value) }}
+					onChange={value => {
+						setDescription(value);
+					}}
 					controls={
 						[
 							['bold', 'italic', 'underline', 'link'],
@@ -253,6 +259,7 @@ export const EditCourse = ({ opened, setOpened, updateCoursesList, editCourseId 
 						color="green"
 						type="submit"
 						style={{ marginRight: '20px' }}
+						onClick={() => { saveCourse }}
 					>
 						Сохранить
 					</Button>
@@ -267,7 +274,7 @@ export const EditCourse = ({ opened, setOpened, updateCoursesList, editCourseId 
 				<Center>
 					<Text color="red">{editError}</Text>
 				</Center>
-			</form>
+			</form>}
 		</Modal>
 	)
 }

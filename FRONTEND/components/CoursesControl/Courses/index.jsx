@@ -7,7 +7,7 @@ import { Plus, TrashX, Edit, ListNumbers, List } from 'tabler-icons-react';
 import { AddCourse } from './addCourse';
 import { DeleteCourse } from './deleteCourse';
 import { EditCourse } from './editCourse';
-import { Days } from './Days';
+import { Days } from '../Days';
 
 export const CoursesControl = () => {
 	const [addCourseModalOpened, setAddCourseModalOpened] = useState(false);
@@ -139,8 +139,8 @@ export const CoursesControl = () => {
 			</Center>
 			<AddCourse opened={addCourseModalOpened} setOpened={setAddCourseModalOpened} pushCourse={pushCourse} />
 			<DeleteCourse opened={deleteCourseModalOpened} setOpened={setDeleteCourseModalOpened} removeCourse={removeCourse} deleteCourseId={deleteCourseId} />
-			<EditCourse opened={editCourseModalOpened} setOpened={setEditCourseModalOpened} updateCourseList={updateCourse} editCourseId={editCourseId} />
-			<Days opened={daysModalOpened} setOpened={setDaysModalOpened} updateCourseList={updateCourse} courseId={courseId} />
+			<EditCourse opened={editCourseModalOpened} setOpened={setEditCourseModalOpened} updateCoursesList={updateCourse} editCourseId={editCourseId} />
+			<Days opened={daysModalOpened} setOpened={setDaysModalOpened} courseId={courseId} />
 		</Container>
 	)
 }

@@ -57,6 +57,14 @@ export default function Home({ courses }) {
 
 export const getServerSideProps = withIronSessionSsr(
 	async function getServerSideProps({ req }) {
+		if (!req.cookies['user-cookies']) {
+			return {
+				redirect: {
+					destination: '/auth',
+					permanent: false,
+				}
+			}
+		}
 		const response = await axios.get(`/public/courses`, {
 			headers: {
 				Cookie: `user-cookies=${req.cookies['user-cookies']};`

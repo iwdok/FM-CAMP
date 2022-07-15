@@ -223,7 +223,7 @@ export default function Task({ task, day, course, task_status, messages }) {
 										</Dropzone>
 									</form>
 								</div>}
-							{task_status === 'ready' && <Center><Text color="green" size="xl" weight={700}>Вы выполнили заданее, можете приступать к выполнению следующих</Text></Center>}
+							{task_status === 'ready' && <Center><Text color="green" size="xl" weight={700}>Вы выполнили задание, можете приступать к выполнению следующих</Text></Center>}
 						</>
 						:
 						<Button loading={acceptLoading} color="green" onClick={() => setAccepted(true)}>Приступить к выполнению</Button>}
@@ -236,6 +236,14 @@ export default function Task({ task, day, course, task_status, messages }) {
 
 export const getServerSideProps = withIronSessionSsr(
 	async function getServerSideProps({ req, query }) {
+		if (!req.cookies['user-cookies']) {
+			return {
+				redirect: {
+					destination: '/auth',
+					permanent: false,
+				}
+			}
+		}
 		const { task_id } = query;
 		const response = await axios.get(`/public/tasks/${task_id}`, {
 			headers: {

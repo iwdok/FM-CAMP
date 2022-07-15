@@ -6,7 +6,7 @@ import axios from '/utils/rest';
 
 import { AddDay } from './addDay';
 import { DeleteDay } from './deleteDay';
-import { Tasks } from './Tasks';
+import { Tasks } from '../Tasks';
 
 export const Days = ({ opened, setOpened, courseId }) => {
 	const [addDayModalOpened, setAddDayModalOpened] = useState(false);
